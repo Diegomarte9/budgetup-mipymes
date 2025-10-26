@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Generated files
+*.d.ts
+next-env.d.ts
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# Database
+*.db
+*.sqlite
+
+# Coverage
+coverage/
+
+# Vercel
+.vercel/
+
+# Supabase
+.supabase/
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Cache
+.cache/
+.turbo/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

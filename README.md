@@ -25,12 +25,14 @@
 <td width="50%">
 
 ### 💼 **Gestión Multi-Empresa**
+
 - Organizaciones independientes con RLS
 - Roles: Owner, Admin, Member
 - Invitaciones por código único
 - Switching rápido entre empresas
 
 ### 💳 **Transacciones Completas**
+
 - Ingresos, gastos y transferencias
 - Soporte para ITBIS (18% predeterminado)
 - Adjuntos y notas detalladas
@@ -40,12 +42,14 @@
 <td width="50%">
 
 ### 📊 **Dashboard Inteligente**
+
 - KPIs del mes actual en tiempo real
 - Gráfico de balance de 12 meses
 - Top categorías de gastos (donut chart)
 - Métricas específicas para MiPymes
 
 ### 📄 **Reportes Profesionales**
+
 - Exportación CSV con streaming
 - PDFs con formato empresarial
 - Filtros avanzados por fecha/cuenta
@@ -70,6 +74,7 @@
 ## 🛠️ Stack Tecnológico
 
 ### Frontend
+
 - **⚡ Next.js 16** - App Router con React 19
 - **🎨 Tailwind CSS v4** - Diseño moderno y responsive
 - **🧩 shadcn/ui** - Componentes accesibles y customizables
@@ -77,12 +82,14 @@
 - **🔄 React Query** - Estado del servidor optimizado
 
 ### Backend
+
 - **🗄️ Supabase** - PostgreSQL con Row Level Security
 - **🔐 Supabase Auth** - Autenticación completa
 - **📁 Supabase Storage** - Almacenamiento de adjuntos
 - **🛡️ RLS Policies** - Seguridad multi-tenant
 
 ### DevOps
+
 - **📦 pnpm** - Gestor de paquetes rápido
 - **🔧 TypeScript** - Type safety completo
 - **🧪 Playwright** - Tests end-to-end
@@ -94,7 +101,7 @@
 
 ### Prerrequisitos
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm 8+
 - Cuenta en Supabase
 
@@ -161,48 +168,56 @@ src/
 ## 🎯 Roadmap de Desarrollo
 
 ### ✅ Sprint 0 - Bootstrap & Entorno
+
 - [x] Configuración Next.js + TypeScript + Tailwind
 - [x] Estructura de proyecto y herramientas
 - [ ] Configuración Supabase y variables de entorno
 - [ ] CI/CD y deployment en Vercel
 
 ### 🔄 Sprint 1 - Auth & Organizaciones (En Progreso)
+
 - [ ] Sistema de autenticación completo
 - [ ] Gestión de organizaciones y roles
 - [ ] Onboarding y invitaciones
 - [ ] Políticas RLS y seguridad
 
 ### 📋 Sprint 2 - Cuentas & Categorías
+
 - [ ] CRUD de cuentas financieras
 - [ ] Gestión de categorías
 - [ ] Validaciones y constraints
 - [ ] Interfaz de administración
 
 ### 💰 Sprint 3 - Transacciones
+
 - [ ] Formularios de ingresos/gastos/transferencias
 - [ ] Atajos de teclado (i/e/t)
 - [ ] Importación CSV
 - [ ] Gestión de adjuntos
 
 ### 📊 Sprint 4 - Dashboard & KPIs
+
 - [ ] Métricas en tiempo real
 - [ ] Gráficos interactivos
 - [ ] Filtros y rangos de fecha
 - [ ] Estados vacíos para nuevos usuarios
 
 ### 📄 Sprint 5 - Reportes & Exportaciones
+
 - [ ] Filtros avanzados
 - [ ] Exportación CSV con streaming
 - [ ] Generación de PDFs profesionales
 - [ ] Historial de reportes
 
 ### 🔐 Sprint 6 - Auditoría & Roles Avanzados
+
 - [ ] Sistema de auditoría automático
 - [ ] Gestión avanzada de usuarios
 - [ ] Logs de actividad reciente
 - [ ] Permisos granulares
 
 ### ✨ Sprint 7 - Pulido & Entrega
+
 - [ ] Optimización de rendimiento
 - [ ] Modo oscuro y mejoras UX
 - [ ] Localización completa es-DO
@@ -292,8 +307,8 @@ Este proyecto está bajo la Licencia MIT. Ver [LICENSE](./LICENSE) para más det
 <table>
 <tr>
 <td align="center">
-<img src="https://github.com/diegomarte9.png" width="100px;" alt="Diego A. Marte Toledo"/><br />
-<sub><b>Tu Nombre</b></sub><br />
+<img src="https://github.com/diegomarte9.png" width="100px;" alt="Tu Nombre"/><br />
+<sub><b>Diego A. Marte Toledo</b></sub><br />
 <a href="https://github.com/diegomarte9" title="GitHub">💻</a>
 <a href="mailto:soportemdev@gmail.com" title="Email">📧</a>
 </td>
