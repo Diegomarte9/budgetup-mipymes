@@ -119,12 +119,28 @@ pnpm install
 cp .env.example .env.local
 # Editar .env.local con tus credenciales de Supabase
 
-# 4. Ejecutar migraciones de base de datos
+# 4. Verificar configuración
+pnpm verify:env
+
+# 5. Ejecutar migraciones de base de datos (próximamente)
 pnpm db:migrate
 
-# 5. Iniciar servidor de desarrollo
+# 6. Iniciar servidor de desarrollo
 pnpm dev
 ```
+
+### 🔍 Verificar Instalación
+
+Una vez que la aplicación esté ejecutándose, puedes verificar que todo funciona correctamente:
+
+- **Página de estado**: [http://localhost:3000/health](http://localhost:3000/health)
+- **API de estado**: [http://localhost:3000/api/health](http://localhost:3000/api/health)
+
+El health check te mostrará:
+- ✅ Estado de la API y base de datos
+- 📊 Información del sistema y rendimiento
+- 🔧 Configuración específica para República Dominicana
+- ⏱️ Tiempos de respuesta y uptime
 
 ### Variables de Entorno
 

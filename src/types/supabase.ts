@@ -72,6 +72,57 @@ export type Database = {
           },
         ];
       };
+      invitations: {
+        Row: {
+          id: string;
+          organization_id: string;
+          email: string;
+          role: 'admin' | 'member';
+          code: string;
+          expires_at: string;
+          used_at: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          email: string;
+          role: 'admin' | 'member';
+          code: string;
+          expires_at: string;
+          used_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          email?: string;
+          role?: 'admin' | 'member';
+          code?: string;
+          expires_at?: string;
+          used_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invitations_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invitations_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       accounts: {
         Row: {
           id: string;
@@ -237,6 +288,57 @@ export type Database = {
             columns: ['transfer_to_account_id'];
             isOneToOne: false;
             referencedRelation: 'accounts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string | null;
+          action: string;
+          table_name: string;
+          record_id: string | null;
+          old_values: Json | null;
+          new_values: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id?: string | null;
+          action: string;
+          table_name: string;
+          record_id?: string | null;
+          old_values?: Json | null;
+          new_values?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          user_id?: string | null;
+          action?: string;
+          table_name?: string;
+          record_id?: string | null;
+          old_values?: Json | null;
+          new_values?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'audit_logs_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'audit_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];

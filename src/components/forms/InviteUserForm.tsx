@@ -1,0 +1,148 @@
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  createInvitationSchema,
+  type CreateInvitationFormData,
+  type Invitation,
+} from '@/lib/validations/invitations';
+
+interface InviteUserFormProps {
+  organizationId: string;
+  onInviteSent: (invitation: Invitation) => void;
+  onCancel?: () => void;
+}
+
+export function InviteUserForm({
+  organizationId,
+  onInviteSent,
+  onCancel,
+}: InviteUserFormProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<CreateInvitationFormData>({
+    resolver: zodResolver(createInvitationSchema),
+    defaultValues: {
+      email: '',
+      role: 'member',
+      organizationId,
+    },
+  });
+
+  const onSubmit = async (data: CreateInvitationFormData) => {
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('/api/invitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al enviar la invitación');
+      }
+
+      toast.success(result.message);
+      onInviteSent(result.invitation);
+      form.reset();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email del usuario</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="usuario@ejemplo.com"
+                  {...field}
+                  disabled={isLoading}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Rol</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isLoading}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un rol" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="member">Miembro</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex gap-2 pt-4">
+          <Button type="submit" disabled={isLoading} className="flex-1">
+            {isLoading ? 'Enviando...' : 'Enviar invitación'}
+          </Button>
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+          )}
+        </div>
+      </form>
+    </Form>
+  );
+}
