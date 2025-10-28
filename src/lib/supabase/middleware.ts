@@ -61,6 +61,32 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // For authenticated users, check onboarding status before accessing protected routes
+  if (user && !isPublicRoute && !request.nextUrl.pathname.startsWith('/auth/onboarding')) {
+    try {
+      // Check if user has completed onboarding (has memberships)
+      const { data: memberships, error } = await supabase
+        .from('memberships')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking memberships in middleware:', error);
+      }
+
+      // If user has no memberships, redirect to onboarding
+      if (!memberships || memberships.length === 0) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/auth/onboarding';
+        return NextResponse.redirect(url);
+      }
+    } catch (error) {
+      console.error('Error in onboarding check:', error);
+      // On error, allow access but log the issue
+    }
+  }
+
   // Redirect authenticated users away from auth pages (except callback, error, and onboarding pages)
   if (user && (
     request.nextUrl.pathname.startsWith('/auth/login') ||

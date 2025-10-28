@@ -16,7 +16,7 @@ export interface ReportFiltersData {
   dateRange?: DateRange;
   accountId?: string;
   categoryId?: string;
-  transactionType?: 'income' | 'expense' | 'transfer' | '';
+  transactionType?: 'income' | 'expense' | 'transfer' | 'all';
 }
 
 interface ReportFiltersProps {
@@ -27,7 +27,7 @@ interface ReportFiltersProps {
 }
 
 const transactionTypeOptions = [
-  { value: '', label: 'Todos los tipos' },
+  { value: 'all', label: 'Todos los tipos' },
   { value: 'income', label: 'Ingresos' },
   { value: 'expense', label: 'Gastos' },
   { value: 'transfer', label: 'Transferencias' },
@@ -82,7 +82,7 @@ export function ReportFilters({
   const clearFilter = (key: keyof ReportFiltersData) => {
     onFiltersChange({
       ...filters,
-      [key]: key === 'dateRange' ? undefined : '',
+      [key]: key === 'dateRange' ? undefined : key === 'transactionType' ? 'all' : 'all',
     });
   };
 
@@ -92,9 +92,9 @@ export function ReportFilters({
         from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
         to: new Date(),
       },
-      accountId: '',
-      categoryId: '',
-      transactionType: '',
+      accountId: 'all',
+      categoryId: 'all',
+      transactionType: 'all',
     });
   };
 
@@ -111,7 +111,9 @@ export function ReportFilters({
   };
 
   const hasActiveFilters = () => {
-    return filters.accountId || filters.categoryId || filters.transactionType;
+    return (filters.accountId && filters.accountId !== 'all') || 
+           (filters.categoryId && filters.categoryId !== 'all') || 
+           (filters.transactionType && filters.transactionType !== 'all');
   };
 
   return (
@@ -149,7 +151,7 @@ export function ReportFilters({
         <div className="space-y-2">
           <Label htmlFor="transaction-type">Tipo de Transacción</Label>
           <Select
-            value={filters.transactionType || ''}
+            value={filters.transactionType || 'all'}
             onValueChange={(value) => updateFilter('transactionType', value)}
           >
             <SelectTrigger id="transaction-type">
@@ -172,21 +174,21 @@ export function ReportFilters({
         <div className="space-y-2">
           <Label htmlFor="account">Cuenta</Label>
           <Select
-            value={filters.accountId || ''}
+            value={filters.accountId || 'all'}
             onValueChange={(value) => updateFilter('accountId', value)}
           >
             <SelectTrigger id="account">
               <SelectValue placeholder={accounts.length === 0 ? "No hay cuentas disponibles" : "Todas las cuentas"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">
+              <SelectItem value="all">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   Todas las cuentas
                 </div>
               </SelectItem>
               {accounts.length === 0 ? (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-accounts" disabled>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
                     No hay cuentas disponibles
@@ -210,21 +212,21 @@ export function ReportFilters({
         <div className="space-y-2">
           <Label htmlFor="category">Categoría</Label>
           <Select
-            value={filters.categoryId || ''}
+            value={filters.categoryId || 'all'}
             onValueChange={(value) => updateFilter('categoryId', value)}
           >
             <SelectTrigger id="category">
               <SelectValue placeholder={categories.length === 0 ? "No hay categorías disponibles" : "Todas las categorías"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">
+              <SelectItem value="all">
                 <div className="flex items-center gap-2">
                   <Tag className="h-4 w-4" />
                   Todas las categorías
                 </div>
               </SelectItem>
               {categories.length === 0 ? (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-categories" disabled>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Tag className="h-4 w-4" />
                     No hay categorías disponibles
@@ -263,7 +265,7 @@ export function ReportFilters({
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {filters.transactionType && (
+            {filters.transactionType && filters.transactionType !== 'all' && (
               <Badge variant="secondary" className="flex items-center gap-1">
                 <ArrowUpDown className="h-3 w-3" />
                 {getSelectedTransactionType()?.label}
@@ -277,7 +279,7 @@ export function ReportFilters({
                 </Button>
               </Badge>
             )}
-            {filters.accountId && (
+            {filters.accountId && filters.accountId !== 'all' && (
               <Badge variant="secondary" className="flex items-center gap-1">
                 <Building2 className="h-3 w-3" />
                 {getSelectedAccount()?.name}
@@ -291,7 +293,7 @@ export function ReportFilters({
                 </Button>
               </Badge>
             )}
-            {filters.categoryId && (
+            {filters.categoryId && filters.categoryId !== 'all' && (
               <Badge variant="secondary" className="flex items-center gap-1">
                 <div 
                   className="w-3 h-3 rounded-full"

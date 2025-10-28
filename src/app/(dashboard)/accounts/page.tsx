@@ -1,56 +1,30 @@
 'use client';
 
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import { AccountList } from '@/components/accounts/AccountList';
+import { AccountBalanceSummary } from '@/components/accounts/AccountBalanceSummary';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ErrorState } from '@/components/ui/error-boundary';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
+import { AccountListSkeleton } from '@/components/ui/skeleton-loaders';
+import { Button } from '@/components/ui/button';
 
 export default function AccountsPage() {
   const { currentOrganization, currentMembership, isLoading, error } = useOrganization();
+  const [triggerCreateAccount, setTriggerCreateAccount] = useState(0);
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'Cuentas' }
   ];
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="space-y-4">
-          {/* Breadcrumb skeleton */}
-          <Skeleton className="h-4 w-48" />
-          
-          {/* Header skeleton */}
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-4 w-80" />
-            </div>
-            <Skeleton className="h-10 w-32" />
-          </div>
-        </div>
+  const handleCreateAccount = () => {
+    setTriggerCreateAccount(prev => prev + 1);
+  };
 
-        {/* Content skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                  <Skeleton className="h-8 w-32" />
-                  <Skeleton className="h-4 w-20" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+  if (isLoading) {
+    return <AccountListSkeleton />;
   }
 
   if (error) {
@@ -93,11 +67,24 @@ export default function AccountsPage() {
         title="Cuentas" 
         description="Gestiona las cuentas financieras de tu organización"
         breadcrumbs={breadcrumbs}
-      />
+      >
+        {canManage && (
+          <Button onClick={handleCreateAccount}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva Cuenta
+          </Button>
+        )}
+      </PageHeader>
       
+      {/* Balance Summary */}
+      <AccountBalanceSummary organizationId={currentOrganization.id} />
+      
+      {/* Account List */}
       <AccountList 
         organizationId={currentOrganization.id}
         canManage={canManage}
+        hideCreateButton={true}
+        triggerCreate={triggerCreateAccount}
       />
     </div>
   );

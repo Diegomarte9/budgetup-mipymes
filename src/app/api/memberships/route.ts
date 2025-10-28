@@ -69,9 +69,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get memberships for organization using the custom function
+    // Get memberships for organization with user details
     const { data: memberships, error } = await supabase
-      .rpc('get_organization_memberships', { org_id: organizationId });
+      .from('memberships')
+      .select(`
+        id,
+        user_id,
+        role,
+        created_at,
+        users:user_id (
+          id,
+          email,
+          created_at
+        )
+      `)
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching memberships:', error);
@@ -81,18 +94,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform the data to match the expected format
-    const membershipsWithUsers = (memberships || []).map((membership: any) => ({
-      id: membership.id,
-      role: membership.role,
-      created_at: membership.created_at,
-      user_id: membership.user_id,
-      users: {
-        id: membership.user_id,
-        email: membership.user_email,
-        created_at: membership.created_at,
-      },
-    }));
+    // The data is already in the correct format
+    const membershipsWithUsers = memberships || [];
 
     return NextResponse.json({ memberships: membershipsWithUsers });
   } catch (error) {

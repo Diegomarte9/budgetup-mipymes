@@ -72,7 +72,9 @@ export default function AuthLayout({
 
               {/* Main form container */}
               <div className='relative rounded-lg border border-gray-700/30 bg-gray-900/60 shadow-2xl shadow-black/60 backdrop-blur-xl'>
-                {children}
+                <div className="light">
+                  {children}
+                </div>
               </div>
             </div>
           </div>

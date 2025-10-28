@@ -47,7 +47,7 @@ export const transactionSchema = z.object({
     .string()
     .max(1000, 'Las notas no pueden exceder 1000 caracteres')
     .optional(),
-  attachment_url: z.string().url('URL de adjunto inválida').optional(),
+  attachment_url: z.string().url('URL de adjunto inválida').optional().or(z.literal('')),
 });
 
 // Form-specific schemas for different transaction types
@@ -55,35 +55,48 @@ export const incomeTransactionSchema = transactionSchema.extend({
   type: z.literal('income'),
   currency: z.string().min(1, 'La moneda es requerida'),
   category_id: z.string().uuid('ID de categoría inválido'),
-  transfer_to_account_id: z.undefined(),
+  transfer_to_account_id: z.string().optional().or(z.literal('')),
 }).refine(
-  (data) => data.category_id !== undefined,
+  (data) => data.category_id !== undefined && data.category_id !== '',
   { message: 'La categoría es requerida para ingresos', path: ['category_id'] }
-);
+).transform((data) => ({
+  ...data,
+  transfer_to_account_id: undefined, // Remove for income transactions
+  attachment_url: data.attachment_url === '' ? undefined : data.attachment_url,
+}));
 
 export const expenseTransactionSchema = transactionSchema.extend({
   type: z.literal('expense'),
   currency: z.string().min(1, 'La moneda es requerida'),
   category_id: z.string().uuid('ID de categoría inválido'),
-  transfer_to_account_id: z.undefined(),
+  transfer_to_account_id: z.string().optional().or(z.literal('')),
 }).refine(
-  (data) => data.category_id !== undefined,
+  (data) => data.category_id !== undefined && data.category_id !== '',
   { message: 'La categoría es requerida para gastos', path: ['category_id'] }
-);
+).transform((data) => ({
+  ...data,
+  transfer_to_account_id: undefined, // Remove for expense transactions
+  attachment_url: data.attachment_url === '' ? undefined : data.attachment_url,
+}));
 
 export const transferTransactionSchema = transactionSchema.extend({
   type: z.literal('transfer'),
   currency: z.string().min(1, 'La moneda es requerida'),
-  category_id: z.undefined(),
+  category_id: z.string().optional().or(z.literal('')),
   transfer_to_account_id: z.string().uuid('ID de cuenta destino inválido'),
-  itbis_pct: z.undefined(),
+  itbis_pct: z.number().optional(),
 }).refine(
   (data) => data.account_id !== data.transfer_to_account_id,
   { 
     message: 'La cuenta origen y destino deben ser diferentes', 
     path: ['transfer_to_account_id'] 
   }
-);
+).transform((data) => ({
+  ...data,
+  category_id: undefined, // Remove for transfer transactions
+  itbis_pct: undefined, // Remove for transfer transactions
+  attachment_url: data.attachment_url === '' ? undefined : data.attachment_url,
+}));
 
 // Base form schema (for form state management)
 export const transactionFormSchema = transactionSchema.extend({

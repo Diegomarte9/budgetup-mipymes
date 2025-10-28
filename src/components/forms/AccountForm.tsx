@@ -39,6 +39,7 @@ export function AccountForm({ organizationId, account, onSuccess, onCancel }: Ac
       type: (account?.type as AccountType) || 'cash',
       currency: account?.currency || 'DOP',
       initial_balance: account?.initial_balance || 0,
+      account_number: (account as any)?.account_number || '',
     },
   });
 
@@ -122,6 +123,34 @@ export function AccountForm({ organizationId, account, onSuccess, onCancel }: Ac
               <p className="text-sm text-red-500">{errors.type.message}</p>
             )}
           </div>
+
+          {/* Account Number (conditional) */}
+          {(watchedType === 'bank' || watchedType === 'credit_card') && (
+            <div className="space-y-2">
+              <Label htmlFor="account_number">
+                {watchedType === 'bank' ? 'Número de Cuenta' : 'Número de Tarjeta'}
+              </Label>
+              <Input
+                id="account_number"
+                placeholder={
+                  watchedType === 'bank' 
+                    ? 'Ej: 1234567890' 
+                    : 'Ej: **** **** **** 1234'
+                }
+                {...register('account_number')}
+                className={errors.account_number ? 'border-red-500' : ''}
+              />
+              {errors.account_number && (
+                <p className="text-sm text-red-500">{errors.account_number.message}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                {watchedType === 'bank' 
+                  ? 'Número de cuenta bancaria (opcional)'
+                  : 'Últimos 4 dígitos o número enmascarado (opcional)'
+                }
+              </p>
+            </div>
+          )}
 
           {/* Currency (read-only for now, defaulted to DOP) */}
           <div className="space-y-2">

@@ -19,6 +19,11 @@ export const accountSchema = z.object({
     .number()
     .min(0, 'El balance inicial no puede ser negativo')
     .max(999999999999.99, 'El balance inicial es demasiado grande'),
+  account_number: z
+    .string()
+    .max(50, 'El número de cuenta no puede exceder 50 caracteres')
+    .optional()
+    .or(z.literal('')),
 });
 
 // Account form schema with defaults
@@ -37,6 +42,11 @@ export const accountFormSchema = z.object({
     .number()
     .min(0, 'El balance inicial no puede ser negativo')
     .max(999999999999.99, 'El balance inicial es demasiado grande'),
+  account_number: z
+    .string()
+    .max(50, 'El número de cuenta no puede exceder 50 caracteres')
+    .optional()
+    .or(z.literal('')),
 });
 
 // Create account schema (includes organization_id)

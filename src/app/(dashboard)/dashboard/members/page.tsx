@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { MemberManagement } from '@/components/forms/MemberManagement';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageLoadingSkeleton } from '@/components/ui/skeleton-loaders';
 import { Loader2, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -20,6 +22,11 @@ export default function MembersPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const breadcrumbs = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Miembros' }
+  ];
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -64,23 +71,17 @@ export default function MembersPage() {
   }, [user, searchParams]);
 
   if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Cargando...</span>
-        </div>
-      </div>
-    );
+    return <PageLoadingSkeleton />;
   }
 
   if (!currentOrg) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <Users className="h-6 w-6" />
-          <h1 className="text-3xl font-bold">Gestión de Miembros</h1>
-        </div>
+        <PageHeader 
+          title="Gestión de Miembros"
+          description="Administra los miembros de tu organización"
+          breadcrumbs={breadcrumbs}
+        />
         
         <Card>
           <CardHeader>
@@ -100,28 +101,22 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Users className="h-6 w-6" />
-          <div>
-            <h1 className="text-3xl font-bold">Gestión de Miembros</h1>
-            <p className="text-muted-foreground">
-              Organización: {currentOrg.name} • Tu rol: {
-                currentOrg.role === 'owner' ? 'Propietario' :
-                currentOrg.role === 'admin' ? 'Administrador' : 'Miembro'
-              }
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader 
+        title="Gestión de Miembros"
+        description={`Organización: ${currentOrg.name} • Tu rol: ${
+          currentOrg.role === 'owner' ? 'Propietario' :
+          currentOrg.role === 'admin' ? 'Administrador' : 'Miembro'
+        }`}
+        breadcrumbs={breadcrumbs}
+      />
 
       {!canManageUsers && (
-        <Card>
+        <Card className="dark-mode-transition">
           <CardContent className="pt-6">
             <div className="text-center">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Acceso Limitado</h3>
-              <p className="text-muted-foreground">
+              <h3 className="text-responsive-base font-semibold mb-2">Acceso Limitado</h3>
+              <p className="text-muted-foreground text-responsive-sm">
                 Solo los propietarios y administradores pueden gestionar miembros de la organización.
               </p>
             </div>

@@ -163,3 +163,112 @@ export async function getUserOrganizations(
     return [];
   }
 }
+
+/**
+ * Real-time permission validation for client-side use
+ */
+export async function validateRealTimePermissions(
+  userId: string,
+  organizationId: string,
+  actions: string[]
+): Promise<Record<string, boolean>> {
+  try {
+    const supabase = await createClient();
+
+    // Get user's current role
+    const { data: membership, error } = await supabase
+      .from('memberships')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('organization_id', organizationId)
+      .single();
+
+    if (error || !membership) {
+      return actions.reduce((acc, action) => ({ ...acc, [action]: false }), {});
+    }
+
+    const userRole = membership.role as Role;
+    const permissions: Record<string, boolean> = {};
+
+    // Define permission mappings
+    const permissionMap: Record<string, Role> = {
+      'manage_members': 'admin',
+      'manage_admins': 'owner',
+      'invite_users': 'admin',
+      'remove_members': 'admin',
+      'change_roles': 'admin',
+      'view_audit_logs': 'admin',
+      'manage_organization': 'owner',
+    };
+
+    // Check each requested action
+    actions.forEach(action => {
+      const requiredRole = permissionMap[action] || 'member';
+      permissions[action] = checkRolePermission(userRole, requiredRole);
+    });
+
+    return permissions;
+  } catch (error) {
+    console.error('Error validating real-time permissions:', error);
+    return actions.reduce((acc, action) => ({ ...acc, [action]: false }), {});
+  }
+}
+
+/**
+ * Check if user can perform specific action on target user
+ */
+export async function canManageUser(
+  currentUserId: string,
+  targetUserId: string,
+  organizationId: string,
+  action: 'change_role' | 'remove' | 'invite'
+): Promise<{ canManage: boolean; reason?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // Get both users' memberships
+    const { data: memberships, error } = await supabase
+      .from('memberships')
+      .select('user_id, role')
+      .eq('organization_id', organizationId)
+      .in('user_id', [currentUserId, targetUserId]);
+
+    if (error || !memberships) {
+      return { canManage: false, reason: 'Error al obtener membresías' };
+    }
+
+    const currentUserMembership = memberships.find(m => m.user_id === currentUserId);
+    const targetUserMembership = memberships.find(m => m.user_id === targetUserId);
+
+    if (!currentUserMembership) {
+      return { canManage: false, reason: 'Usuario no es miembro de la organización' };
+    }
+
+    const currentUserRole = currentUserMembership.role as Role;
+
+    // Owners can manage everyone except other owners
+    if (currentUserRole === 'owner') {
+      if (targetUserMembership?.role === 'owner' && action !== 'invite') {
+        return { canManage: false, reason: 'No se puede gestionar a otros propietarios' };
+      }
+      return { canManage: true };
+    }
+
+    // Admins can manage members but not other admins or owners
+    if (currentUserRole === 'admin') {
+      if (!targetUserMembership && action === 'invite') {
+        return { canManage: true };
+      }
+      if (targetUserMembership?.role === 'member') {
+        return { canManage: true };
+      }
+      return { canManage: false, reason: 'Los administradores solo pueden gestionar miembros' };
+    }
+
+    // Members cannot manage anyone
+    return { canManage: false, reason: 'Sin permisos de gestión' };
+  } catch (error) {
+    console.error('Error checking user management permissions:', error);
+    return { canManage: false, reason: 'Error interno' };
+  }
+}

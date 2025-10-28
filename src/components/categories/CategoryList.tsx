@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useCategories, useDeleteCategory } from '@/hooks/useCategories';
 import { CategoryForm } from '@/components/forms/CategoryForm';
 import { categoryTypeLabels, type CategoryType } from '@/lib/validations/categories';
+import { CategoryListSkeleton } from '@/components/ui/skeleton-loaders';
 import type { Tables } from '@/types/supabase';
 import { MoreHorizontal, Edit, Trash2, Plus, Tag } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 type Category = Tables<'categories'>;
 
@@ -116,57 +117,7 @@ export function CategoryList({ organizationId, type, showCreateButton = true, ca
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {/* Header Actions Skeleton */}
-        <div className="flex justify-end">
-          <div className="h-10 w-36 bg-gray-200 rounded animate-pulse" />
-        </div>
-
-        {/* Content Skeleton */}
-        <div className="space-y-6">
-          {/* Income categories skeleton */}
-          <div className="space-y-3">
-            <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse" />
-                      <div className="space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
-                        <div className="h-3 bg-gray-200 rounded w-16 animate-pulse" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Expense categories skeleton */}
-          <div className="space-y-3">
-            <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse" />
-                      <div className="space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
-                        <div className="h-3 bg-gray-200 rounded w-16 animate-pulse" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <CategoryListSkeleton />;
   }
 
   if (error) {

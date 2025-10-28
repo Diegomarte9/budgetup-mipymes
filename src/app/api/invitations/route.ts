@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createInvitationSchema } from '@/lib/validations/invitations';
 import { nanoid } from 'nanoid';
+import { auditApiAction } from '@/lib/audit/middleware';
 
 // Generate unique invitation code
 function generateInvitationCode(): string {
@@ -115,19 +116,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is already a member
-    const { data: existingMembership } = await supabase
-      .from('memberships')
-      .select('id')
-      .eq('organization_id', validatedData.organizationId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (existingMembership) {
-      return NextResponse.json(
-        { error: 'El usuario ya es miembro de esta organización' },
-        { status: 409 }
+    // Check if the invited user (by email) is already a member
+    // First, try to find if there's a user with this email using admin client
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
       );
+      
+      const { data: invitedUser } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = invitedUser.users.find(u => u.email === validatedData.email);
+      
+      if (existingUser) {
+        // Check if this user is already a member of the organization
+        const { data: existingMembership } = await supabase
+          .from('memberships')
+          .select('id')
+          .eq('organization_id', validatedData.organizationId)
+          .eq('user_id', existingUser.id)
+          .single();
+
+        if (existingMembership) {
+          return NextResponse.json(
+            { error: 'El usuario ya es miembro de esta organización' },
+            { status: 409 }
+          );
+        }
+      }
+    } catch (adminError) {
+      console.error('Error checking existing user:', adminError);
+      // Continue without failing - we'll handle duplicates later if needed
     }
 
     // Check if there's already a pending invitation for this email
@@ -179,6 +204,13 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
+    // Get organization details for email
+    const { data: organization } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', validatedData.organizationId)
+      .single();
+
     // Create invitation
     const { data: invitation, error: createError } = await supabase
       .from('invitations')
@@ -200,6 +232,62 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Send invitation email using Supabase Auth Admin
+    try {
+      const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/invitation?code=${code}`;
+      
+      // Create admin client with service role key for sending emails
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+      );
+      
+      // Use admin client to send invitation email
+      const { error: emailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        validatedData.email,
+        {
+          redirectTo: invitationUrl,
+          data: {
+            organization_name: organization?.name || 'la organización',
+            role: validatedData.role,
+            invitation_code: code,
+            invited_by: user.email,
+          }
+        }
+      );
+
+      if (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Don't fail the request if email fails, but log it
+        // The invitation is still created and can be used manually
+      }
+    } catch (emailError) {
+      console.error('Error sending invitation email:', emailError);
+      // Continue without failing - invitation is still valid
+    }
+
+    // Log the invitation sent action
+    await auditApiAction(
+      validatedData.organizationId,
+      'invite_sent',
+      'invitations',
+      invitation.id,
+      undefined,
+      {
+        email: validatedData.email,
+        role: validatedData.role,
+        code: invitation.code,
+        expires_at: invitation.expires_at,
+      }
+    );
 
     return NextResponse.json({
       invitation,

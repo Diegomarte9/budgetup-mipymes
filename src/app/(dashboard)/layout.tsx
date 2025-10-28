@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { DashboardNav } from '@/components/navigation/DashboardNav';
+import { DashboardNavWrapper } from '@/components/navigation/DashboardNavWrapper';
 
 export default async function DashboardLayout({
   children,
@@ -17,30 +17,25 @@ export default async function DashboardLayout({
     redirect('/auth/login');
   }
 
-  // Get user's organizations
-  const { data: memberships } = await supabase
+  // Check if user has completed onboarding
+  const { data: memberships, error } = await supabase
     .from('memberships')
-    .select(`
-      role,
-      organizations (
-        id,
-        name
-      )
-    `)
-    .eq('user_id', user.id);
+    .select('id')
+    .eq('user_id', user.id)
+    .limit(1);
 
-  const organizations = memberships?.map(m => ({
-    id: (m.organizations as any).id,
-    name: (m.organizations as any).name,
-    role: m.role,
-  })) || [];
+  if (error) {
+    console.error('Error checking memberships in dashboard layout:', error);
+  }
+
+  // If user has no memberships, redirect to onboarding
+  if (!memberships || memberships.length === 0) {
+    redirect('/auth/onboarding');
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav 
-        currentOrganization={organizations[0]} 
-        organizations={organizations}
-      />
+      <DashboardNavWrapper />
       <main className="container mx-auto px-4 py-6">{children}</main>
     </div>
   );

@@ -75,18 +75,89 @@ export function useAuth() {
         },
       });
 
-      if (error) throw error;
+      // Log the response for debugging (remove in production)
+      console.log('SignUp response:', { authData, error });
 
-      if (authData.user && !authData.user.email_confirmed_at) {
+      // Check for errors first, before showing success message
+      if (error) {
+        throw error;
+      }
+
+      // Enhanced detection for existing users
+      if (authData.user) {
+        // Method 1: Check if email is already confirmed (strong indicator of existing user)
+        if (authData.user.email_confirmed_at) {
+          toast.error('Ya existe una cuenta con este email', {
+            description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+            duration: 6000,
+          });
+          return { data: null, error: new Error('User already exists') as AuthError };
+        }
+
+        // Method 2: Check creation time - if user was created more than 10 seconds ago, likely existing
+        const userCreatedAt = new Date(authData.user.created_at);
+        const now = new Date();
+        const timeDiff = now.getTime() - userCreatedAt.getTime();
+        const tenSeconds = 10 * 1000;
+        
+        if (timeDiff > tenSeconds) {
+          toast.error('Ya existe una cuenta con este email', {
+            description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+            duration: 6000,
+          });
+          return { data: null, error: new Error('User already exists') as AuthError };
+        }
+
+        // Method 3: Check if user has identities (existing users usually have identities)
+        if (authData.user.identities && authData.user.identities.length > 0) {
+          const identity = authData.user.identities[0];
+          if (identity.created_at) {
+            const identityCreatedAt = new Date(identity.created_at);
+            const identityTimeDiff = now.getTime() - identityCreatedAt.getTime();
+            
+            if (identityTimeDiff > tenSeconds) {
+              toast.error('Ya existe una cuenta con este email', {
+                description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+                duration: 6000,
+              });
+              return { data: null, error: new Error('User already exists') as AuthError };
+            }
+          }
+        }
+
+        // If we get here, it's likely a new user
         toast.success(
           'Cuenta creada exitosamente. Por favor revisa tu email para verificar tu cuenta.'
+        );
+      } else {
+        // No user returned - fallback message
+        toast.success(
+          'Si el email no está registrado, recibirás un correo de confirmación.'
         );
       }
 
       return { data: authData, error: null };
     } catch (error) {
       const authError = error as AuthError;
-      toast.error(authError.message || 'Error al crear la cuenta');
+      
+      // Handle specific error cases
+      if (authError.message?.includes('User already registered') || 
+          authError.message?.includes('already registered') ||
+          authError.message?.includes('email address is already registered') ||
+          authError.message?.includes('Ya existe una cuenta con este email') ||
+          authError.message?.includes('User already exists')) {
+        
+        // Show a more helpful error message for existing users
+        toast.error('Ya existe una cuenta con este email', {
+          description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+          duration: 6000,
+        });
+        return { data: null, error: authError };
+      }
+      
+      // Generic error handling
+      const errorMessage = authError.message || 'Error al crear la cuenta';
+      toast.error(errorMessage);
       return { data: null, error: authError };
     } finally {
       setAuthState(prev => ({ ...prev, loading: false }));

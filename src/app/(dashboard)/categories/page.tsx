@@ -4,8 +4,7 @@ import { useOrganization } from '@/hooks/useOrganization';
 import { CategoryList } from '@/components/categories/CategoryList';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ErrorState } from '@/components/ui/error-boundary';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
+import { CategoryListSkeleton } from '@/components/ui/skeleton-loaders';
 
 export default function CategoriesPage() {
   const { currentOrganization, currentMembership, isLoading, error } = useOrganization();
@@ -16,66 +15,7 @@ export default function CategoriesPage() {
   ];
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="space-y-4">
-          {/* Breadcrumb skeleton */}
-          <Skeleton className="h-4 w-48" />
-          
-          {/* Header skeleton */}
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-36" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <Skeleton className="h-10 w-36" />
-          </div>
-        </div>
-
-        {/* Content skeleton */}
-        <div className="space-y-6">
-          {/* Income categories skeleton */}
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-48" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="w-4 h-4 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Expense categories skeleton */}
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-48" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="w-4 h-4 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <CategoryListSkeleton />;
   }
 
   if (error) {

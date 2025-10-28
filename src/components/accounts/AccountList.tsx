@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { AccountCard } from './AccountCard';
 import { AccountForm } from '@/components/forms/AccountForm';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useAccountBalances } from '@/hooks/useAccountBalances';
 import { accountTypeLabels, type AccountType } from '@/lib/validations/accounts';
+import { AccountListSkeleton } from '@/components/ui/skeleton-loaders';
 import type { Tables } from '@/types/supabase';
 
 type Account = Tables<'accounts'>;
@@ -18,15 +20,23 @@ type Account = Tables<'accounts'>;
 interface AccountListProps {
   organizationId: string;
   canManage?: boolean;
+  hideCreateButton?: boolean;
+  triggerCreate?: number;
 }
 
-export function AccountList({ organizationId, canManage = false }: AccountListProps) {
+export function AccountList({ 
+  organizationId, 
+  canManage = false, 
+  hideCreateButton = false,
+  triggerCreate = 0
+}: AccountListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<AccountType | 'all'>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   const { data: accounts, isLoading, error } = useAccounts(organizationId);
+  const { data: balances, isLoading: balancesLoading } = useAccountBalances(organizationId);
 
   // Filter accounts based on search term and type
   const filteredAccounts = accounts?.filter((account) => {
@@ -47,53 +57,31 @@ export function AccountList({ organizationId, canManage = false }: AccountListPr
     setEditingAccount(account);
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {/* Header Actions Skeleton */}
-        <div className="flex justify-end">
-          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
-        </div>
+  // Handle external trigger to create account
+  useEffect(() => {
+    if (triggerCreate > 0) {
+      setIsCreateDialogOpen(true);
+    }
+  }, [triggerCreate]);
 
-        {/* Filters Skeleton */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="h-10 flex-1 bg-gray-200 rounded animate-pulse" />
-          <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
-        </div>
-
-        {/* Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                  <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+  if (isLoading || balancesLoading) {
+    return <AccountListSkeleton />;
   }
 
   if (error) {
     return (
       <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex justify-end">
-          {canManage && (
-            <Button disabled>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Cuenta
-            </Button>
-          )}
-        </div>
+        {/* Header Actions - Only show if not hidden */}
+        {!hideCreateButton && (
+          <div className="flex justify-end">
+            {canManage && (
+              <Button disabled>
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva Cuenta
+              </Button>
+            )}
+          </div>
+        )}
         
         <div className="text-center py-8">
           <p className="text-red-600 mb-4">Error al cargar las cuentas</p>
@@ -113,15 +101,17 @@ export function AccountList({ organizationId, canManage = false }: AccountListPr
 
   return (
     <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex justify-end">
-        {canManage && (
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva Cuenta
-          </Button>
-        )}
-      </div>
+      {/* Header Actions - Only show if not hidden */}
+      {!hideCreateButton && (
+        <div className="flex justify-end">
+          {canManage && (
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Cuenta
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">

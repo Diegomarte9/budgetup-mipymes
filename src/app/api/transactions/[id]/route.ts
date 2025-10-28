@@ -31,7 +31,7 @@ export async function GET(
       .from('transactions')
       .select(`
         *,
-        account:accounts(id, name, type),
+        account:accounts!transactions_account_id_fkey(id, name, type),
         category:categories(id, name, type, color),
         transfer_to_account:accounts!transactions_transfer_to_account_id_fkey(id, name, type)
       `)
@@ -234,7 +234,7 @@ export async function PUT(
       .eq('id', id)
       .select(`
         *,
-        account:accounts(id, name, type),
+        account:accounts!transactions_account_id_fkey(id, name, type),
         category:categories(id, name, type, color),
         transfer_to_account:accounts!transactions_transfer_to_account_id_fkey(id, name, type)
       `)

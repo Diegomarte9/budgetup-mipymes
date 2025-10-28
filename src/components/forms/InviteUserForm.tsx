@@ -68,7 +68,13 @@ export function InviteUserForm({
         throw new Error(result.error || 'Error al enviar la invitación');
       }
 
-      toast.success(result.message);
+      // Show success message with invitation link
+      const invitationUrl = `${window.location.origin}/auth/invitation?code=${result.invitation.code}`;
+      toast.success(
+        `Invitación enviada exitosamente. Enlace: ${invitationUrl}`,
+        { duration: 10000 }
+      );
+      
       onInviteSent(result.invitation);
       form.reset();
     } catch (error) {

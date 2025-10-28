@@ -21,12 +21,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { TransactionModal } from '@/components/forms/TransactionModal';
 import { TransactionImport } from '@/components/forms/TransactionImport';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useTransactions, useDeleteTransaction } from '@/hooks/useTransactions';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useTransactionShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { formatCurrency, transactionTypeLabels, type TransactionType } from '@/lib/validations/transactions';
+import { TransactionListSkeleton } from '@/components/ui/skeleton-loaders';
+import { MobileButton } from '@/components/ui/mobile-button';
 import { Pencil, Trash2, Filter, X, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tables } from '@/types/supabase';
@@ -37,8 +40,8 @@ interface TransactionFilters {
   type?: TransactionType;
   accountId?: string;
   categoryId?: string;
-  startDate?: string;
-  endDate?: string;
+  month?: string;
+  year?: string;
   search?: string;
 }
 
@@ -65,14 +68,28 @@ export default function TransactionsPage() {
   // Calculate pagination
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
   
+  // Calculate date range from month/year filters
+  const getDateRangeFromFilters = () => {
+    if (!filters.month || !filters.year) return { startDate: undefined, endDate: undefined };
+    
+    const year = parseInt(filters.year);
+    const month = parseInt(filters.month);
+    const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+    
+    return { startDate, endDate };
+  };
+
+  const { startDate, endDate } = getDateRangeFromFilters();
+
   // Fetch transactions with filters
   const { data: transactions = [], isLoading, refetch } = useTransactions({
     organizationId,
     type: filters.type,
     accountId: filters.accountId,
     categoryId: filters.categoryId,
-    startDate: filters.startDate,
-    endDate: filters.endDate,
+    startDate,
+    endDate,
     limit: ITEMS_PER_PAGE,
     offset,
   });
@@ -166,17 +183,19 @@ export default function TransactionsPage() {
     );
   }
 
+  const breadcrumbs = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Transacciones' }
+  ];
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Transacciones</h1>
-          <p className="text-gray-600">
-            Gestiona los ingresos, gastos y transferencias de tu organización
-          </p>
-        </div>
-        
+      <PageHeader 
+        title="Transacciones"
+        description="Gestiona los ingresos, gastos y transferencias de tu organización"
+        breadcrumbs={breadcrumbs}
+      >
         <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
@@ -204,51 +223,16 @@ export default function TransactionsPage() {
           </Button>
           
           <Button
+            size="sm"
             onClick={() => openCreateModal('expense')}
             className="flex items-center gap-2"
           >
             + Nueva Transacción
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
-      {/* Quick Action Buttons */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
-          <CardDescription>
-            Usa estos botones o atajos de teclado (I/E/T) para crear transacciones
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={() => openCreateModal('income')}
-              variant="outline"
-              size="sm"
-              className="text-green-600 border-green-600 hover:bg-green-50"
-            >
-              + Ingreso (I)
-            </Button>
-            <Button
-              onClick={() => openCreateModal('expense')}
-              variant="outline"
-              size="sm"
-              className="text-red-600 border-red-600 hover:bg-red-50"
-            >
-              + Gasto (E)
-            </Button>
-            <Button
-              onClick={() => openCreateModal('transfer')}
-              variant="outline"
-              size="sm"
-              className="text-blue-600 border-blue-600 hover:bg-blue-50"
-            >
-              + Transferencia (T)
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Filters */}
       {showFilters && (
@@ -279,7 +263,7 @@ export default function TransactionsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {/* Search */}
               <div className="space-y-2">
                 <Label htmlFor="search">Buscar</Label>
@@ -295,14 +279,14 @@ export default function TransactionsPage() {
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo</Label>
                 <Select
-                  value={filters.type || ''}
-                  onValueChange={(value) => handleFilterChange('type', value)}
+                  value={filters.type || 'all'}
+                  onValueChange={(value) => handleFilterChange('type', value === 'all' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos los tipos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los tipos</SelectItem>
+                    <SelectItem value="all">Todos los tipos</SelectItem>
                     {Object.entries(transactionTypeLabels).map(([value, label]) => (
                       <SelectItem key={value} value={value}>
                         {label}
@@ -316,14 +300,14 @@ export default function TransactionsPage() {
               <div className="space-y-2">
                 <Label htmlFor="account">Cuenta</Label>
                 <Select
-                  value={filters.accountId || ''}
-                  onValueChange={(value) => handleFilterChange('accountId', value)}
+                  value={filters.accountId || 'all'}
+                  onValueChange={(value) => handleFilterChange('accountId', value === 'all' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas las cuentas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las cuentas</SelectItem>
+                    <SelectItem value="all">Todas las cuentas</SelectItem>
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
                         {account.name}
@@ -337,14 +321,14 @@ export default function TransactionsPage() {
               <div className="space-y-2">
                 <Label htmlFor="category">Categoría</Label>
                 <Select
-                  value={filters.categoryId || ''}
-                  onValueChange={(value) => handleFilterChange('categoryId', value)}
+                  value={filters.categoryId || 'all'}
+                  onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas las categorías" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las categorías</SelectItem>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         <div className="flex items-center gap-2">
@@ -360,23 +344,56 @@ export default function TransactionsPage() {
                 </Select>
               </div>
 
-              {/* Date Range */}
-              <div className="space-y-2 md:col-span-2 lg:col-span-1">
-                <Label>Rango de Fechas</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="date"
-                    placeholder="Desde"
-                    value={filters.startDate || ''}
-                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                  />
-                  <Input
-                    type="date"
-                    placeholder="Hasta"
-                    value={filters.endDate || ''}
-                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                  />
-                </div>
+              {/* Month and Year Filter */}
+              <div className="space-y-2">
+                <Label>Mes</Label>
+                <Select
+                  value={filters.month || 'all'}
+                  onValueChange={(value) => handleFilterChange('month', value === 'all' ? undefined : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos los meses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los meses</SelectItem>
+                    <SelectItem value="1">Enero</SelectItem>
+                    <SelectItem value="2">Febrero</SelectItem>
+                    <SelectItem value="3">Marzo</SelectItem>
+                    <SelectItem value="4">Abril</SelectItem>
+                    <SelectItem value="5">Mayo</SelectItem>
+                    <SelectItem value="6">Junio</SelectItem>
+                    <SelectItem value="7">Julio</SelectItem>
+                    <SelectItem value="8">Agosto</SelectItem>
+                    <SelectItem value="9">Septiembre</SelectItem>
+                    <SelectItem value="10">Octubre</SelectItem>
+                    <SelectItem value="11">Noviembre</SelectItem>
+                    <SelectItem value="12">Diciembre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Year Filter */}
+              <div className="space-y-2">
+                <Label>Año</Label>
+                <Select
+                  value={filters.year || 'all'}
+                  onValueChange={(value) => handleFilterChange('year', value === 'all' ? undefined : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos los años" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los años</SelectItem>
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const year = new Date().getFullYear() - i;
+                      return (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
@@ -402,9 +419,7 @@ export default function TransactionsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Cargando transacciones...</p>
-            </div>
+            <TransactionListSkeleton />
           ) : filteredTransactions.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">
@@ -438,13 +453,7 @@ export default function TransactionsPage() {
                     {filteredTransactions.map((transaction) => (
                       <TableRow key={transaction.id}>
                         <TableCell>
-                          <Badge
-                            variant={
-                              transaction.type === 'income' ? 'default' :
-                              transaction.type === 'expense' ? 'destructive' :
-                              'secondary'
-                            }
-                          >
+                          <Badge variant="outline">
                             {transactionTypeLabels[transaction.type]}
                           </Badge>
                         </TableCell>
@@ -484,11 +493,6 @@ export default function TransactionsPage() {
                         <TableCell>
                           <div className="text-sm">
                             <p>{new Date(transaction.occurred_at).toLocaleDateString('es-DO')}</p>
-                            {transaction.itbis_pct && transaction.itbis_pct > 0 && (
-                              <p className="text-xs text-gray-500">
-                                ITBIS: {transaction.itbis_pct}%
-                              </p>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">

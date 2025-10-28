@@ -59,12 +59,12 @@ export function ForgotPasswordForm() {
             <Button
               onClick={() => setEmailSent(false)}
               variant="outline"
-              className="w-full"
+              className="w-full border-white text-white hover:bg-white hover:text-black"
             >
               Enviar otro email
             </Button>
             <Link href="/auth/login" className="block">
-              <Button variant="ghost" className="w-full">
+              <Button variant="ghost" className="w-full text-white hover:bg-white/10">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver al inicio de sesión
               </Button>
@@ -88,26 +88,26 @@ export function ForgotPasswordForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-white">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="tu@email.com"
               {...register('email')}
-              className={errors.email ? 'border-red-500' : ''}
+              className={errors.email ? 'border-red-500 text-white placeholder:text-gray-400' : 'border-gray-500 text-white placeholder:text-gray-400'}
             />
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email.message}</p>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-white text-black hover:bg-gray-100" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Enviar Enlace de Restablecimiento
           </Button>
 
           <Link href="/auth/login" className="block">
-            <Button variant="ghost" className="w-full">
+            <Button variant="ghost" className="w-full text-white hover:bg-white/10">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Volver al inicio de sesión
             </Button>

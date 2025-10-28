@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       .from('transactions')
       .select(`
         *,
-        account:accounts(id, name, type),
+        account:accounts!transactions_account_id_fkey(id, name, type),
         category:categories(id, name, type, color),
         transfer_to_account:accounts!transactions_transfer_to_account_id_fkey(id, name, type)
       `)
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
       })
       .select(`
         *,
-        account:accounts(id, name, type),
+        account:accounts!transactions_account_id_fkey(id, name, type),
         category:categories(id, name, type, color),
         transfer_to_account:accounts!transactions_transfer_to_account_id_fkey(id, name, type)
       `)

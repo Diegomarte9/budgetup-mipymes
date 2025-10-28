@@ -77,7 +77,13 @@ export function useOrganization() {
     if (orgFromUrl && organizations.some(org => org.id === orgFromUrl)) {
       setCurrentOrgId(orgFromUrl);
     } else if (organizations.length > 0 && !currentOrgId) {
-      setCurrentOrgId(organizations[0].id);
+      // Set the first organization and update URL
+      const firstOrgId = organizations[0].id;
+      setCurrentOrgId(firstOrgId);
+      // Update URL without causing a page reload
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('org', firstOrgId);
+      window.history.replaceState({}, '', newUrl.toString());
     }
   }, [organizations, searchParams, currentOrgId]);
 
@@ -105,7 +111,8 @@ export function useOrganization() {
       const { organization, message } = result as CreateOrganizationResponse;
       
       toast.success(message);
-      router.push('/dashboard');
+      // Redirect to dashboard with the new organization selected
+      router.push(`/dashboard?org=${organization.id}`);
       
       return { data: organization, error: null };
     } catch (error) {
@@ -138,7 +145,8 @@ export function useOrganization() {
       const { organization, role, message } = result as JoinOrganizationResponse;
       
       toast.success(message);
-      router.push('/dashboard');
+      // Redirect to dashboard with the joined organization selected
+      router.push(`/dashboard?org=${organization.id}`);
       
       return { data: { organization, role }, error: null };
     } catch (error) {
@@ -152,7 +160,10 @@ export function useOrganization() {
 
   const switchOrganization = (organizationId: string) => {
     setCurrentOrgId(organizationId);
-    router.push(`${window.location.pathname}?org=${organizationId}`);
+    // Update URL with the new organization
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('org', organizationId);
+    router.push(newUrl.toString());
   };
 
   return {

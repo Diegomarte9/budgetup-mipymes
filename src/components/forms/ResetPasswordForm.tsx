@@ -45,19 +45,19 @@ export function ResetPasswordForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="password">Nueva Contraseña</Label>
+            <Label htmlFor="password" className="text-white">Nueva Contraseña</Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 {...register('password')}
-                className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                className={errors.password ? 'border-red-500 pr-10 text-white placeholder:text-gray-400' : 'border-gray-500 pr-10 text-white placeholder:text-gray-400'}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -72,19 +72,19 @@ export function ResetPasswordForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
+            <Label htmlFor="confirmPassword" className="text-white">Confirmar Nueva Contraseña</Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 {...register('confirmPassword')}
-                className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                className={errors.confirmPassword ? 'border-red-500 pr-10 text-white placeholder:text-gray-400' : 'border-gray-500 pr-10 text-white placeholder:text-gray-400'}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -100,7 +100,7 @@ export function ResetPasswordForm() {
 
           <PasswordStrengthIndicator password={password || ''} />
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-white text-black hover:bg-gray-100" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Actualizar Contraseña
           </Button>

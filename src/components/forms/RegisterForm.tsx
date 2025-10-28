@@ -30,7 +30,12 @@ export function RegisterForm() {
   const password = watch('password');
 
   const onSubmit = async (data: SignUpFormData) => {
-    await signUp(data);
+    const result = await signUp(data);
+    
+    // If there's an error related to existing user, we could show additional UI
+    if (result.error && result.error.message?.includes('Ya existe una cuenta con este email')) {
+      // The error toast is already shown by useAuth, but we could add additional logic here if needed
+    }
   };
 
   return (
@@ -46,13 +51,13 @@ export function RegisterForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-white">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="tu@email.com"
               {...register('email')}
-              className={errors.email ? 'border-red-500' : ''}
+              className={errors.email ? 'border-red-500 text-white placeholder:text-gray-400' : 'border-gray-500 text-white placeholder:text-gray-400'}
             />
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -60,19 +65,19 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
+            <Label htmlFor="password" className="text-white">Contraseña</Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 {...register('password')}
-                className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                className={errors.password ? 'border-red-500 pr-10 text-white placeholder:text-gray-400' : 'border-gray-500 pr-10 text-white placeholder:text-gray-400'}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -87,19 +92,19 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+            <Label htmlFor="confirmPassword" className="text-white">Confirmar Contraseña</Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 {...register('confirmPassword')}
-                className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                className={errors.confirmPassword ? 'border-red-500 pr-10 text-white placeholder:text-gray-400' : 'border-gray-500 pr-10 text-white placeholder:text-gray-400'}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -115,7 +120,7 @@ export function RegisterForm() {
 
           <PasswordStrengthIndicator password={password || ''} />
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-white text-black hover:bg-gray-100" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Crear Cuenta
           </Button>

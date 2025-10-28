@@ -19,7 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { InviteUserForm } from './InviteUserForm';
-import { useInvitations } from '@/hooks/useInvitations';
+import { PendingInvitations } from './PendingInvitations';
 import { useMemberships } from '@/hooks/useMemberships';
 import type { Invitation } from '@/lib/validations/invitations';
 
@@ -34,12 +34,6 @@ export function MemberManagement({
 }: MemberManagementProps) {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   
-  const {
-    invitations,
-    loading: invitationsLoading,
-    deleteInvitation,
-  } = useInvitations({ organizationId });
-
   const {
     memberships,
     loading: membershipsLoading,
@@ -63,12 +57,6 @@ export function MemberManagement({
     }
   };
 
-  const handleCancelInvitation = async (invitationId: string) => {
-    if (confirm('¿Estás seguro de que quieres cancelar esta invitación?')) {
-      await deleteInvitation(invitationId);
-    }
-  };
-
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'owner':
@@ -80,20 +68,7 @@ export function MemberManagement({
     }
   };
 
-  const getInvitationStatus = (invitation: Invitation) => {
-    if (invitation.used_at) {
-      return { text: 'Aceptada', variant: 'default' as const };
-    }
-    
-    const isExpired = new Date(invitation.expires_at) < new Date();
-    if (isExpired) {
-      return { text: 'Expirada', variant: 'destructive' as const };
-    }
-    
-    return { text: 'Pendiente', variant: 'secondary' as const };
-  };
-
-  if (membershipsLoading || invitationsLoading) {
+  if (membershipsLoading) {
     return <div>Cargando...</div>;
   }
 
@@ -191,60 +166,7 @@ export function MemberManagement({
 
       {/* Pending Invitations */}
       {canManageUsers && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Invitaciones Pendientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {invitations.map((invitation) => {
-                const status = getInvitationStatus(invitation);
-                return (
-                  <div
-                    key={invitation.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <p className="font-medium">{invitation.email}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Invitado el {new Date(invitation.created_at).toLocaleDateString()}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Código: <code className="bg-muted px-1 rounded">{invitation.code}</code>
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Badge variant={getRoleBadgeVariant(invitation.role)}>
-                          {invitation.role === 'admin' ? 'Administrador' : 'Miembro'}
-                        </Badge>
-                        <Badge variant={status.variant}>
-                          {status.text}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {!invitation.used_at && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleCancelInvitation(invitation.id)}
-                      >
-                        Cancelar
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-
-              {invitations.length === 0 && (
-                <p className="text-muted-foreground text-center py-4">
-                  No hay invitaciones pendientes.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <PendingInvitations organizationId={organizationId} />
       )}
     </div>
   );

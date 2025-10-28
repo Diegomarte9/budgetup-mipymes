@@ -2,13 +2,14 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
+import { Building2, Loader2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useAuth } from '@/hooks/useAuth';
 import { createOrganizationSchema, type CreateOrganizationFormData } from '@/lib/validations/onboarding';
 
 interface CreateOrganizationFormProps {
@@ -17,6 +18,7 @@ interface CreateOrganizationFormProps {
 
 export function CreateOrganizationForm({ onBack }: CreateOrganizationFormProps) {
   const { createOrganization, loading } = useOrganization();
+  const { signOut } = useAuth();
 
   const {
     register,
@@ -37,23 +39,17 @@ export function CreateOrganizationForm({ onBack }: CreateOrganizationFormProps) 
     await createOrganization(data);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <Card className="w-full bg-transparent border-none shadow-none">
       <CardHeader className="space-y-1 pb-4 px-6">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-            className="text-slate-400 hover:text-white p-1 -ml-1"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <CardTitle className="text-xl font-bold text-white flex items-center space-x-2">
-            <Building2 className="h-5 w-5 text-red-400" />
-            <span>Crear Organización</span>
-          </CardTitle>
-        </div>
+        <CardTitle className="text-xl font-bold text-white flex items-center space-x-2">
+          <Building2 className="h-5 w-5 text-red-400" />
+          <span>Crear Organización</span>
+        </CardTitle>
         <CardDescription className="text-slate-300 text-sm">
           Configura tu empresa para comenzar a gestionar tus finanzas
         </CardDescription>
@@ -61,13 +57,13 @@ export function CreateOrganizationForm({ onBack }: CreateOrganizationFormProps) 
       <CardContent className="px-6 pb-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre de la Empresa</Label>
+            <Label htmlFor="name" className="text-white">Nombre de la Empresa</Label>
             <Input
               id="name"
               type="text"
               placeholder="Ej: Mi Empresa S.R.L."
               {...register('name')}
-              className={errors.name ? 'border-red-500' : ''}
+              className={errors.name ? 'border-red-500 text-white placeholder:text-gray-400' : 'border-gray-500 text-white placeholder:text-gray-400'}
             />
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -78,12 +74,12 @@ export function CreateOrganizationForm({ onBack }: CreateOrganizationFormProps) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="currency">Moneda</Label>
+            <Label htmlFor="currency" className="text-white">Moneda</Label>
             <Select
               value={currency}
               onValueChange={(value) => setValue('currency', value)}
             >
-              <SelectTrigger className={errors.currency ? 'border-red-500' : ''}>
+              <SelectTrigger className={errors.currency ? 'border-red-500 text-white' : 'border-gray-500 text-white'}>
                 <SelectValue placeholder="Selecciona una moneda" />
               </SelectTrigger>
               <SelectContent>
@@ -98,7 +94,7 @@ export function CreateOrganizationForm({ onBack }: CreateOrganizationFormProps) 
           </div>
 
           <div className="pt-4 space-y-3">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-white text-black hover:bg-gray-100" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Crear Organización
             </Button>
@@ -106,11 +102,22 @@ export function CreateOrganizationForm({ onBack }: CreateOrganizationFormProps) 
             <Button
               type="button"
               variant="outline"
-              className="w-full bg-transparent border-gray-600 text-slate-300 hover:bg-gray-800/50"
+              className="w-full bg-transparent border-gray-500 text-slate-300 hover:bg-gray-800/50 hover:text-white"
               onClick={onBack}
               disabled={loading}
             >
               Volver
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-slate-400 hover:text-white hover:bg-gray-800/50"
+              onClick={handleSignOut}
+              disabled={loading}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Cambiar de cuenta
             </Button>
           </div>
         </form>
