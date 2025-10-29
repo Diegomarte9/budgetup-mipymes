@@ -101,7 +101,11 @@ export function ReportPreview({ transactions, isLoading, error, filters }: Repor
   }, [transactions]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-DO', {
+    // Parse the date string as YYYY-MM-DD to avoid timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    return date.toLocaleDateString('es-DO', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

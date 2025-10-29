@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useMembershipRefresh } from '@/contexts/MembershipContext';
 import type {
   Invitation,
   CreateInvitationFormData,
@@ -15,6 +16,7 @@ export function useInvitations({ organizationId }: UseInvitationsOptions = {}) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const { refreshTrigger } = useMembershipRefresh();
 
   // Fetch invitations for organization
   const fetchInvitations = async (orgId?: string) => {
@@ -168,12 +170,12 @@ export function useInvitations({ organizationId }: UseInvitationsOptions = {}) {
     }
   };
 
-  // Auto-fetch invitations when organizationId changes
+  // Auto-fetch invitations when organizationId changes or refresh is triggered
   useEffect(() => {
     if (organizationId) {
       fetchInvitations(organizationId);
     }
-  }, [organizationId]);
+  }, [organizationId, refreshTrigger]);
 
   return {
     invitations,

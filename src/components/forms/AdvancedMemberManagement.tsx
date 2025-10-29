@@ -30,6 +30,7 @@ import { usePermissions, useCanManageMembers } from '@/hooks/usePermissions';
 import type { Invitation } from '@/lib/validations/invitations';
 import { UserMinus, Edit, AlertTriangle, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AdvancedMemberManagementProps {
   organizationId: string;
@@ -174,7 +175,90 @@ export function AdvancedMemberManagement({
   );
 
   if (membershipsLoading || invitationsLoading || permissionsLoading) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="space-y-6">
+        {/* Search and Filter Controls Skeleton */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Skeleton className="h-5 w-5" />
+              <Skeleton className="h-6 w-40" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <Skeleton className="h-4 w-32 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="sm:w-48">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Current Members Skeleton */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Skeleton className="h-6 w-48" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-48 mb-2" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Skeleton className="h-9 w-32" />
+                    <Skeleton className="h-9 w-20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pending Invitations Skeleton */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Skeleton className="h-6 w-48" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-48 mb-2" />
+                      <Skeleton className="h-3 w-32 mb-1" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-9 w-20" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -246,14 +330,14 @@ export function AdvancedMemberManagement({
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium flex items-center gap-2">
+                      <div className="font-medium flex items-center gap-2">
                         {membership.users.email}
                         {isCurrentUser && (
                           <Badge variant="outline" className="text-xs">
                             Tú
                           </Badge>
                         )}
-                      </p>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Miembro desde {new Date(membership.created_at).toLocaleDateString('es-ES', {
                           year: 'numeric',

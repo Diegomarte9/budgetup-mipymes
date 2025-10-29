@@ -3,17 +3,37 @@ import { z } from 'zod';
 // Create invitation schema
 export const createInvitationSchema = z.object({
   email: z
-    .string()
-    .email('Email inválido')
-    .min(1, 'El email es requerido'),
+    .string({
+      required_error: 'El email es requerido',
+      invalid_type_error: 'El email debe ser una cadena de texto'
+    })
+    .min(1, 'El email no puede estar vacío')
+    .max(255, 'El email no puede exceder 255 caracteres')
+    .email('Ingresa un email válido (ejemplo: usuario@dominio.com)')
+    .toLowerCase()
+    .trim()
+    .refine((email) => {
+      // Additional email validation
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(email);
+    }, {
+      message: 'El formato del email no es válido'
+    }),
   role: z
-    .enum(['admin', 'member'])
+    .enum(['admin', 'member'], {
+      required_error: 'El rol es requerido',
+      invalid_type_error: 'Selecciona un rol válido'
+    })
     .refine((val) => ['admin', 'member'].includes(val), {
-      message: 'Rol inválido',
+      message: 'El rol debe ser "admin" o "member"',
     }),
   organizationId: z
-    .string()
-    .uuid('ID de organización inválido'),
+    .string({
+      required_error: 'El ID de organización es requerido',
+      invalid_type_error: 'El ID de organización debe ser una cadena de texto'
+    })
+    .uuid('El ID de organización debe ser un UUID válido')
+    .min(1, 'El ID de organización no puede estar vacío'),
 });
 
 // Accept invitation schema

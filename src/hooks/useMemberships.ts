@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useMembershipRefresh } from '@/contexts/MembershipContext';
 import type { Membership } from '@/lib/validations/invitations';
 
 interface MembershipWithUser extends Membership {
@@ -18,6 +19,7 @@ export function useMemberships({ organizationId }: UseMemebershipsOptions = {}) 
   const [memberships, setMemberships] = useState<MembershipWithUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const { refreshTrigger } = useMembershipRefresh();
 
   // Fetch memberships for organization
   const fetchMemberships = async (orgId?: string) => {
@@ -112,12 +114,12 @@ export function useMemberships({ organizationId }: UseMemebershipsOptions = {}) 
     }
   };
 
-  // Auto-fetch memberships when organizationId changes
+  // Auto-fetch memberships when organizationId changes or refresh is triggered
   useEffect(() => {
     if (organizationId) {
       fetchMemberships(organizationId);
     }
-  }, [organizationId]);
+  }, [organizationId, refreshTrigger]);
 
   return {
     memberships,

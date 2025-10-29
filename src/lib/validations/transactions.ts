@@ -10,8 +10,12 @@ export const transactionSchema = z.object({
     { message: 'Tipo de transacción inválido' }
   ),
   amount: z
-    .number()
+    .number({
+      required_error: 'El monto es requerido',
+      invalid_type_error: 'El monto debe ser un número'
+    })
     .positive('El monto debe ser mayor a cero')
+    .min(0.01, 'El monto mínimo es RD$0.01')
     .max(999999999999.99, 'El monto es demasiado grande')
     .refine(
       (val) => {
@@ -20,23 +24,54 @@ export const transactionSchema = z.object({
         return decimalPlaces <= 2;
       },
       { message: 'El monto no puede tener más de 2 decimales' }
+    )
+    .refine(
+      (val) => !isNaN(val) && isFinite(val),
+      { message: 'El monto debe ser un número válido' }
     ),
   currency: z.string().min(1, 'La moneda es requerida').default('DOP'),
   description: z
-    .string()
-    .min(1, 'La descripción es requerida')
-    .max(500, 'La descripción no puede exceder 500 caracteres')
-    .trim(),
-  occurred_at: z.string().refine(
-    (val) => {
-      const date = new Date(val);
-      return !isNaN(date.getTime());
-    },
-    { message: 'Fecha inválida' }
-  ),
-  account_id: z.string().uuid('ID de cuenta inválido'),
+    .string({
+      required_error: 'El concepto es requerido',
+      invalid_type_error: 'El concepto debe ser texto'
+    })
+    .min(1, 'El concepto no puede estar vacío')
+    .max(500, 'El concepto no puede exceder 500 caracteres')
+    .trim()
+    .refine((val) => val.length > 0, {
+      message: 'El concepto es requerido'
+    }),
+  occurred_at: z
+    .string({
+      required_error: 'La fecha es requerida',
+      invalid_type_error: 'La fecha debe ser una cadena de texto'
+    })
+    .min(1, 'La fecha es requerida')
+    .refine(
+      (val) => {
+        const date = new Date(val);
+        return !isNaN(date.getTime());
+      },
+      { message: 'La fecha no es válida' }
+    )
+    .refine(
+      (val) => {
+        const date = new Date(val);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return date <= today;
+      },
+      { message: 'La fecha no puede ser futura' }
+    ),
+  account_id: z
+    .string({
+      required_error: 'Debes seleccionar una cuenta',
+      invalid_type_error: 'El ID de cuenta debe ser texto'
+    })
+    .uuid('Selecciona una cuenta válida')
+    .min(1, 'Debes seleccionar una cuenta'),
   category_id: z.string().uuid('ID de categoría inválido').optional(),
-  transfer_to_account_id: z.string().uuid('ID de cuenta destino inválido').optional(),
+  transfer_to_account_id: z.string().uuid('ID de cuenta destino inválido').optional().nullable(),
   itbis_pct: z
     .number()
     .min(0, 'El porcentaje de ITBIS no puede ser negativo')
@@ -47,7 +82,7 @@ export const transactionSchema = z.object({
     .string()
     .max(1000, 'Las notas no pueden exceder 1000 caracteres')
     .optional(),
-  attachment_url: z.string().url('URL de adjunto inválida').optional().or(z.literal('')),
+  attachment_url: z.string().url('URL de adjunto inválida').optional().nullable().or(z.literal('')),
 });
 
 // Form-specific schemas for different transaction types
@@ -55,34 +90,34 @@ export const incomeTransactionSchema = transactionSchema.extend({
   type: z.literal('income'),
   currency: z.string().min(1, 'La moneda es requerida'),
   category_id: z.string().uuid('ID de categoría inválido'),
-  transfer_to_account_id: z.string().optional().or(z.literal('')),
+  transfer_to_account_id: z.string().optional().nullable().or(z.literal('')),
 }).refine(
   (data) => data.category_id !== undefined && data.category_id !== '',
   { message: 'La categoría es requerida para ingresos', path: ['category_id'] }
 ).transform((data) => ({
   ...data,
   transfer_to_account_id: undefined, // Remove for income transactions
-  attachment_url: data.attachment_url === '' ? undefined : data.attachment_url,
+  attachment_url: data.attachment_url === '' || data.attachment_url === null ? undefined : data.attachment_url,
 }));
 
 export const expenseTransactionSchema = transactionSchema.extend({
   type: z.literal('expense'),
   currency: z.string().min(1, 'La moneda es requerida'),
   category_id: z.string().uuid('ID de categoría inválido'),
-  transfer_to_account_id: z.string().optional().or(z.literal('')),
+  transfer_to_account_id: z.string().optional().nullable().or(z.literal('')),
 }).refine(
   (data) => data.category_id !== undefined && data.category_id !== '',
   { message: 'La categoría es requerida para gastos', path: ['category_id'] }
 ).transform((data) => ({
   ...data,
   transfer_to_account_id: undefined, // Remove for expense transactions
-  attachment_url: data.attachment_url === '' ? undefined : data.attachment_url,
+  attachment_url: data.attachment_url === '' || data.attachment_url === null ? undefined : data.attachment_url,
 }));
 
 export const transferTransactionSchema = transactionSchema.extend({
   type: z.literal('transfer'),
   currency: z.string().min(1, 'La moneda es requerida'),
-  category_id: z.string().optional().or(z.literal('')),
+  category_id: z.string().optional().nullable().or(z.literal('')),
   transfer_to_account_id: z.string().uuid('ID de cuenta destino inválido'),
   itbis_pct: z.number().optional(),
 }).refine(
@@ -95,7 +130,7 @@ export const transferTransactionSchema = transactionSchema.extend({
   ...data,
   category_id: undefined, // Remove for transfer transactions
   itbis_pct: undefined, // Remove for transfer transactions
-  attachment_url: data.attachment_url === '' ? undefined : data.attachment_url,
+  attachment_url: data.attachment_url === '' || data.attachment_url === null ? undefined : data.attachment_url,
 }));
 
 // Base form schema (for form state management)

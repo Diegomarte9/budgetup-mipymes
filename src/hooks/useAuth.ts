@@ -53,10 +53,36 @@ export function useAuth() {
 
       // Handle auth events
       if (event === 'SIGNED_IN') {
+        // Check for pending invitation after sign in
+        const pendingInvitation = sessionStorage.getItem('pendingInvitation');
+        if (pendingInvitation) {
+          try {
+            const invitationData = JSON.parse(pendingInvitation);
+            // Accept the invitation automatically
+            const response = await fetch('/api/invitations/accept', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ code: invitationData.code }),
+            });
+
+            if (response.ok) {
+              sessionStorage.removeItem('pendingInvitation');
+              toast.success(`¡Te has unido exitosamente a ${invitationData.organizationName}!`);
+            }
+          } catch (error) {
+            console.error('Error processing pending invitation:', error);
+          }
+        }
+        
         // Let the dashboard page handle onboarding redirection
         router.push('/dashboard');
       } else if (event === 'SIGNED_OUT') {
-        router.push('/auth/login');
+        // Don't redirect to login if user is on invitation page
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/invitation')) {
+          router.push('/auth/login');
+        }
       }
     });
 

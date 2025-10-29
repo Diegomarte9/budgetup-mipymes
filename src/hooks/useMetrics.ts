@@ -9,7 +9,12 @@ import type {
 
 // Base fetch function with error handling
 async function fetchMetrics<T>(endpoint: string): Promise<T> {
-  const response = await fetch(endpoint);
+  const response = await fetch(endpoint, {
+    credentials: 'include', // Include cookies for authentication
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
   
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -91,6 +96,30 @@ export function useTopCategories(
   return useQuery({
     queryKey: ['metrics', 'top-categories', organizationId, limit, month, startDate, endDate],
     queryFn: () => fetchMetrics<TopCategoriesResponse>(`/api/metrics/top-categories?${queryParams.toString()}`),
+    enabled: !!organizationId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Hook for top expense accounts
+export function useTopAccounts(
+  organizationId: string, 
+  options: { 
+    limit?: number; 
+  } = {}
+) {
+  const { limit = 5 } = options;
+  
+  const queryParams = new URLSearchParams({
+    organizationId,
+    limit: limit.toString(),
+  });
+
+  return useQuery({
+    queryKey: ['metrics', 'top-accounts', organizationId, limit],
+    queryFn: () => fetchMetrics<any>(`/api/metrics/top-accounts?${queryParams.toString()}`),
     enabled: !!organizationId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

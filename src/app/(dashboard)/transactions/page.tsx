@@ -27,10 +27,13 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useCategories } from '@/hooks/useCategories';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useTransactionShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { formatCurrency, transactionTypeLabels, type TransactionType } from '@/lib/validations/transactions';
+import { transactionTypeLabels, type TransactionType } from '@/lib/validations/transactions';
+import { formatCurrency } from '@/lib/utils/currency';
+import { formatDateForDisplay, formatDateForInput } from '@/lib/utils/date';
+import { useTransactionTotals } from '@/hooks/useTransactionTotals';
 import { TransactionListSkeleton } from '@/components/ui/skeleton-loaders';
 import { MobileButton } from '@/components/ui/mobile-button';
-import { Pencil, Trash2, Filter, X, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { Pencil, Trash2, Filter, X, ChevronLeft, ChevronRight, Upload, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tables } from '@/types/supabase';
 
@@ -94,6 +97,17 @@ export default function TransactionsPage() {
     offset,
   });
 
+  // Get totals for all filtered transactions (not just current page)
+  const { totals: transactionTotals, loading: totalsLoading } = useTransactionTotals({
+    organizationId,
+    type: filters.type || undefined,
+    accountId: filters.accountId || undefined,
+    categoryId: filters.categoryId || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    search: filters.search || undefined,
+  });
+
   // Delete mutation
   const deleteTransactionMutation = useDeleteTransaction();
 
@@ -107,6 +121,8 @@ export default function TransactionsPage() {
       transaction.notes?.toLowerCase().includes(searchTerm)
     );
   }, [transactions, filters.search]);
+
+
 
   // Calculate total pages (approximate, since we don't have total count)
   const hasNextPage = transactions.length === ITEMS_PER_PAGE;
@@ -400,6 +416,121 @@ export default function TransactionsPage() {
         </Card>
       )}
 
+      {/* Transaction Totals Summary */}
+      {filteredTransactions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Resumen Financiero</CardTitle>
+            <CardDescription>
+              {hasActiveFilters 
+                ? 'Totales basados en los filtros aplicados'
+                : 'Totales de todas las transacciones'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid-mobile-1 gap-mobile">
+              {/* Income Card */}
+              <Card className="hover:shadow-md transition-shadow dark-mode-transition">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-responsive-xs font-medium text-muted-foreground">
+                    Ingresos {hasActiveFilters ? '(Filtrados)' : ''}
+                  </CardTitle>
+                  <div className="h-4 w-4 text-muted-foreground shrink-0">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-responsive-xl font-bold text-green-600">
+                    {totalsLoading ? 'Calculando...' : formatCurrency(transactionTotals.income)}
+                  </div>
+                  <div className="flex items-center text-responsive-xs text-green-600">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="ml-1 truncate">
+                      Entradas de dinero
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Expenses Card */}
+              <Card className="hover:shadow-md transition-shadow dark-mode-transition">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-responsive-xs font-medium text-muted-foreground">
+                    Gastos {hasActiveFilters ? '(Filtrados)' : ''}
+                  </CardTitle>
+                  <div className="h-4 w-4 text-muted-foreground shrink-0">
+                    <TrendingDown className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-responsive-xl font-bold text-red-600">
+                    {totalsLoading ? 'Calculando...' : formatCurrency(transactionTotals.expense)}
+                  </div>
+                  <div className="flex items-center text-responsive-xs text-red-600">
+                    <TrendingDown className="h-4 w-4" />
+                    <span className="ml-1 truncate">
+                      Salidas de dinero
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Net Balance Card */}
+              <Card className="hover:shadow-md transition-shadow dark-mode-transition">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-responsive-xs font-medium text-muted-foreground">
+                    Balance Neto {hasActiveFilters ? '(Filtrado)' : ''}
+                  </CardTitle>
+                  <div className="h-4 w-4 text-muted-foreground shrink-0">
+                    <DollarSign className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-responsive-xl font-bold ${
+                    transactionTotals.net >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {totalsLoading ? 'Calculando...' : `${transactionTotals.net >= 0 ? '+' : ''}${formatCurrency(transactionTotals.net)}`}
+                  </div>
+                  <div className={`flex items-center text-responsive-xs ${
+                    transactionTotals.net >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {transactionTotals.net >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    <span className="ml-1 truncate">
+                      {transactionTotals.net >= 0 ? 'Ganancia' : 'Pérdida'}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Additional info */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+                <span>
+                  {totalsLoading ? 'Calculando...' : `${transactionTotals.count} transacciones`}
+                  {hasActiveFilters && ' (filtradas)'}
+                </span>
+                <span>
+                  Volumen total: {totalsLoading ? 'Calculando...' : formatCurrency(transactionTotals.total)}
+                </span>
+              </div>
+              
+              {/* Show filter impact if filters are active */}
+              {hasActiveFilters && (
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+                  💡 Los totales mostrados reflejan únicamente las transacciones que coinciden con tus filtros
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Transactions Table */}
       <Card>
         <CardHeader>
@@ -407,7 +538,8 @@ export default function TransactionsPage() {
             <div>
               <CardTitle>Lista de Transacciones</CardTitle>
               <CardDescription>
-                {filteredTransactions.length} transacciones encontradas
+                {totalsLoading ? 'Calculando...' : `${transactionTotals.count} transacciones`}
+                {hasActiveFilters ? ' encontradas con los filtros aplicados' : ' en total'}
               </CardDescription>
             </div>
             
@@ -492,7 +624,7 @@ export default function TransactionsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <p>{new Date(transaction.occurred_at).toLocaleDateString('es-DO')}</p>
+                            <p>{formatDateForDisplay(transaction.occurred_at)}</p>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -554,7 +686,7 @@ export default function TransactionsPage() {
               {/* Pagination */}
               <div className="flex justify-between items-center mt-4">
                 <div className="text-sm text-gray-500">
-                  Mostrando {filteredTransactions.length} transacciones
+                  Mostrando {filteredTransactions.length} de {totalsLoading ? '...' : transactionTotals.count} transacciones
                 </div>
                 
                 <div className="flex gap-2">

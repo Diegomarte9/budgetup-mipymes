@@ -466,7 +466,7 @@ export function generatePdfReportHtml(
                     <tbody>
                         ${transactions.map(transaction => `
                             <tr>
-                                <td>${new Date(transaction.occurred_at).toLocaleDateString('es-DO')}</td>
+                                <td>${transaction.occurred_at}</td>
                                 <td>
                                     <span class="transaction-type ${transaction.type}">
                                         ${formatTransactionType(transaction.type)}

@@ -6,13 +6,14 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useHydration } from '@/hooks/useHydration';
 import {
-  DropdownMenu,
+  HydrationSafeDropdownMenu as DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/hydration-safe-dropdown';
 import {
   Home,
   Users,
@@ -83,12 +84,18 @@ export function DashboardNav({
   const { user, signOut } = useAuth();
   const { currentMembership } = useOrganization();
   const [isLoading, setIsLoading] = useState(false);
+  const isHydrated = useHydration();
 
   const handleSignOut = async () => {
     setIsLoading(true);
     await signOut();
     setIsLoading(false);
   };
+
+  // Don't render anything until hydrated on client to prevent hydration mismatch
+  if (!isHydrated) {
+    return null;
+  }
 
   return (
     <header className='supports-backdrop-filter:bg-background/60 border-b bg-background/95 backdrop-blur dark-mode-transition'>

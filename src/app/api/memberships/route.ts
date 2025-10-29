@@ -69,20 +69,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get memberships for organization with user details
+    // Get memberships for organization first
     const { data: memberships, error } = await supabase
       .from('memberships')
-      .select(`
-        id,
-        user_id,
-        role,
-        created_at,
-        users:user_id (
-          id,
-          email,
-          created_at
-        )
-      `)
+      .select('id, user_id, role, created_at')
       .eq('organization_id', organizationId)
       .order('created_at', { ascending: false });
 
@@ -94,8 +84,40 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // The data is already in the correct format
-    const membershipsWithUsers = memberships || [];
+    // Create admin client to get user details
+    const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Get user details for each membership
+    const userIds = memberships.map(m => m.user_id);
+    const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return NextResponse.json(
+        { error: 'Error al obtener los detalles de usuarios' },
+        { status: 500 }
+      );
+    }
+
+    // Combine memberships with user data
+    const membershipsWithUsers = memberships.map(membership => ({
+      ...membership,
+      users: users.users.find(user => user.id === membership.user_id) || {
+        id: membership.user_id,
+        email: 'Usuario no encontrado',
+        created_at: new Date().toISOString()
+      }
+    }));
 
     return NextResponse.json({ memberships: membershipsWithUsers });
   } catch (error) {

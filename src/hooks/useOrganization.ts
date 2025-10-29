@@ -57,6 +57,18 @@ export function useOrganization() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
+  // Get stored organization from localStorage
+  const getStoredOrgId = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('currentOrganizationId');
+  };
+
+  // Store organization in localStorage
+  const storeOrgId = (orgId: string) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('currentOrganizationId', orgId);
+  };
+
   // Fetch user's organizations
   const { 
     data: memberships, 
@@ -71,19 +83,35 @@ export function useOrganization() {
 
   const organizations = memberships?.map(m => m.organization) || [];
 
-  // Set current organization from URL params or default to first
+  // Set current organization from URL params, localStorage, or default to first
   useEffect(() => {
+    if (organizations.length === 0) return;
+
     const orgFromUrl = searchParams.get('org');
+    const storedOrgId = getStoredOrgId();
+    
+    let targetOrgId: string | null = null;
+
+    // Priority: URL param > localStorage > first organization
     if (orgFromUrl && organizations.some(org => org.id === orgFromUrl)) {
-      setCurrentOrgId(orgFromUrl);
-    } else if (organizations.length > 0 && !currentOrgId) {
-      // Set the first organization and update URL
-      const firstOrgId = organizations[0].id;
-      setCurrentOrgId(firstOrgId);
-      // Update URL without causing a page reload
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('org', firstOrgId);
-      window.history.replaceState({}, '', newUrl.toString());
+      targetOrgId = orgFromUrl;
+    } else if (storedOrgId && organizations.some(org => org.id === storedOrgId)) {
+      targetOrgId = storedOrgId;
+    } else if (organizations.length > 0) {
+      targetOrgId = organizations[0].id;
+    }
+
+    if (targetOrgId && targetOrgId !== currentOrgId) {
+      setCurrentOrgId(targetOrgId);
+      storeOrgId(targetOrgId);
+      
+      // Update URL without causing navigation if it's different
+      const currentUrlOrgId = searchParams.get('org');
+      if (currentUrlOrgId !== targetOrgId) {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('org', targetOrgId);
+        window.history.replaceState({}, '', newUrl.toString());
+      }
     }
   }, [organizations, searchParams, currentOrgId]);
 
@@ -160,10 +188,17 @@ export function useOrganization() {
 
   const switchOrganization = (organizationId: string) => {
     setCurrentOrgId(organizationId);
-    // Update URL with the new organization
+    storeOrgId(organizationId);
+    
+    // Update URL with the new organization without full navigation
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set('org', organizationId);
-    router.push(newUrl.toString());
+    
+    // Use replaceState to avoid navigation, just update the URL
+    window.history.replaceState({}, '', newUrl.toString());
+    
+    // Force a re-render by updating the state
+    // The URL change will be picked up by other components that depend on searchParams
   };
 
   return {

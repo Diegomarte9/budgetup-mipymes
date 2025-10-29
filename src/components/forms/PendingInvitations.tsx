@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,14 +41,20 @@ export function PendingInvitations({ organizationId }: PendingInvitationsProps) 
   const { invitations, loading, fetchInvitations, deleteInvitation } = useInvitations({ organizationId });
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Auto-refresh invitations every 30 seconds to check for acceptances
+  // Auto-refresh invitations more frequently when there are pending invitations
   useEffect(() => {
+    if (!organizationId) return;
+    
+    // Refresh more frequently if there are pending invitations
+    const hasPendingInvitations = invitations.some(inv => !inv.used_at && new Date(inv.expires_at) >= new Date());
+    const refreshInterval = hasPendingInvitations ? 10000 : 30000; // 10s if pending, 30s otherwise
+    
     const interval = setInterval(() => {
       fetchInvitations(organizationId);
-    }, 30000);
+    }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [organizationId, fetchInvitations]);
+  }, [organizationId, fetchInvitations, invitations]);
 
   const handleCopyInvitationLink = async (code: string) => {
     const invitationUrl = `${window.location.origin}/auth/invitation?code=${code}`;
@@ -95,20 +102,46 @@ export function PendingInvitations({ organizationId }: PendingInvitationsProps) 
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Mail className="h-5 w-5" />
-            <span>Invitaciones</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-6 w-6 animate-spin" />
-            <span className="ml-2">Cargando invitaciones...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <span>Invitaciones Pendientes</span>
+              </div>
+            </CardTitle>
+            <CardDescription>
+              Invitaciones que aún no han sido aceptadas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div>
+                        <Skeleton className="h-4 w-48 mb-2" />
+                        <div className="flex items-center space-x-2">
+                          <Skeleton className="h-3 w-20" />
+                          <span>•</span>
+                          <Skeleton className="h-3 w-32" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

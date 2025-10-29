@@ -4,7 +4,8 @@ import React from 'react';
 import { KPICards } from './KPICards';
 import { MonthlyBalanceChart } from './MonthlyBalanceChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
-import { useKPIs, useMonthlyBalance, useTopCategories } from '@/hooks/useMetrics';
+import { AccountDonutChart } from './AccountDonutChart';
+import { useKPIs, useMonthlyBalance, useTopCategories, useTopAccounts } from '@/hooks/useMetrics';
 import type { DashboardMetrics } from '@/types/metrics';
 
 interface DashboardChartsProps {
@@ -23,9 +24,12 @@ export function DashboardCharts({ organizationId, currency = 'DOP' }: DashboardC
   const kpis = useKPIs(organizationId);
   const monthlyBalance = useMonthlyBalance(organizationId, { months: 12 });
   const topCategories = useTopCategories(organizationId, { limit: 5 });
+  const topAccounts = useTopAccounts(organizationId, { limit: 5 });
 
-  const isLoading = kpis.isLoading || monthlyBalance.isLoading || topCategories.isLoading;
-  const hasError = kpis.isError || monthlyBalance.isError || topCategories.isError;
+
+
+  const isLoading = kpis.isLoading || monthlyBalance.isLoading || topCategories.isLoading || topAccounts.isLoading;
+  const hasError = kpis.isError || monthlyBalance.isError || topCategories.isError || topAccounts.isError;
 
   if (hasError) {
     return (
@@ -75,6 +79,17 @@ export function DashboardCharts({ organizationId, currency = 'DOP' }: DashboardC
           <CategoryDonutChart
             data={topCategories.data?.data || []}
             totalExpenses={topCategories.data?.totalExpenses || 0}
+            currency={currency}
+            isLoading={isLoading}
+            height={300}
+          />
+        </div>
+
+        {/* Account Donut Chart */}
+        <div className="lg:col-span-1">
+          <AccountDonutChart
+            data={topAccounts.data?.data || []}
+            totalExpenses={topAccounts.data?.totalExpenses || 0}
             currency={currency}
             isLoading={isLoading}
             height={300}

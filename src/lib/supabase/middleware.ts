@@ -44,6 +44,7 @@ export async function updateSession(request: NextRequest) {
     '/auth/forgot-password',
     '/auth/reset-password',
     '/auth/onboarding',
+    '/auth/invitation',
     '/auth/callback',
     '/auth/auth-code-error',
     '/health',
@@ -54,8 +55,16 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   );
 
+  // Debug logging
+  if (request.nextUrl.pathname.includes('/invitation')) {
+    console.log('Middleware: Processing invitation route:', request.nextUrl.pathname);
+    console.log('Middleware: Is public route:', isPublicRoute);
+    console.log('Middleware: User exists:', !!user);
+  }
+
   // Redirect unauthenticated users to login (except for public routes)
   if (!user && !isPublicRoute) {
+    console.log('Middleware: Redirecting to login from:', request.nextUrl.pathname);
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
@@ -87,7 +96,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users away from auth pages (except callback, error, and onboarding pages)
+  // Redirect authenticated users away from auth pages (except callback, error, onboarding, and invitation pages)
   if (user && (
     request.nextUrl.pathname.startsWith('/auth/login') ||
     request.nextUrl.pathname.startsWith('/auth/register') ||

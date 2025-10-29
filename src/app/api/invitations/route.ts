@@ -72,6 +72,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log(`Fetched ${invitations.length} invitations for org ${organizationId}:`);
+    invitations.forEach(inv => {
+      console.log(`- ${inv.email}: used_at=${inv.used_at}, expires_at=${inv.expires_at}`);
+    });
+
     return NextResponse.json({ invitations });
   } catch (error) {
     console.error('Error in GET /api/invitations:', error);
@@ -116,8 +121,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if the invited user (by email) is already a member
-    // First, try to find if there's a user with this email using admin client
+    // Check if the invited user (by email) is already a member of this organization
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const supabaseAdmin = createClient(
@@ -233,7 +237,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send invitation email using Supabase Auth Admin
+    // Send invitation email
     try {
       const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/invitation?code=${code}`;
       
@@ -250,24 +254,38 @@ export async function POST(request: NextRequest) {
         }
       );
       
-      // Use admin client to send invitation email
-      const { error: emailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-        validatedData.email,
-        {
-          redirectTo: invitationUrl,
-          data: {
-            organization_name: organization?.name || 'la organización',
-            role: validatedData.role,
-            invitation_code: code,
-            invited_by: user.email,
+      // Check if user already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = existingUsers.users.find(u => u.email === validatedData.email);
+      
+      if (existingUser) {
+        // User exists, send a custom invitation email (not through Supabase Auth)
+        // For now, we'll just log this - you can implement a custom email service later
+        console.log(`Sending invitation to existing user: ${validatedData.email}`);
+        console.log(`Invitation URL: ${invitationUrl}`);
+        
+        // TODO: Implement custom email sending service for existing users
+        // This could be done with services like SendGrid, Mailgun, etc.
+        
+      } else {
+        // User doesn't exist, use Supabase Auth to create and invite
+        const { error: emailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+          validatedData.email,
+          {
+            redirectTo: invitationUrl,
+            data: {
+              organization_name: organization?.name || 'la organización',
+              role: validatedData.role,
+              invitation_code: code,
+              invited_by: user.email,
+            }
           }
-        }
-      );
+        );
 
-      if (emailError) {
-        console.error('Error sending invitation email:', emailError);
-        // Don't fail the request if email fails, but log it
-        // The invitation is still created and can be used manually
+        if (emailError) {
+          console.error('Error sending invitation email:', emailError);
+          // Don't fail the request if email fails, but log it
+        }
       }
     } catch (emailError) {
       console.error('Error sending invitation email:', emailError);

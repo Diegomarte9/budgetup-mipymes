@@ -21,6 +21,7 @@ import {
   type TransactionFormData,
   type TransactionType 
 } from '@/lib/validations/transactions';
+import { formatDateForInput, getTodayForInput, dateInputToISO } from '@/lib/utils/date';
 import type { Tables } from '@/types/supabase';
 
 type Transaction = Tables<'transactions'>;
@@ -62,12 +63,13 @@ export function TransactionForm({
     clearErrors,
     formState: { errors },
   } = useForm<TransactionFormData>({
+    mode: 'onChange', // Enable real-time validation
     defaultValues: {
       type: transaction?.type || defaultType,
       amount: transaction?.amount || 0,
       currency: transaction?.currency || 'DOP',
       description: transaction?.description || '',
-      occurred_at: transaction?.occurred_at || new Date().toISOString().split('T')[0],
+      occurred_at: transaction?.occurred_at ? formatDateForInput(transaction.occurred_at) : getTodayForInput(),
       account_id: transaction?.account_id || '',
       category_id: transaction?.category_id || '',
       transfer_to_account_id: transaction?.transfer_to_account_id || '',
@@ -79,6 +81,11 @@ export function TransactionForm({
   const watchedType = watch('type');
   const watchedAccountId = watch('account_id');
   const watchedAmount = watch('amount');
+  const watchedDescription = watch('description');
+  const watchedCategoryId = watch('category_id');
+  const watchedTransferToAccountId = watch('transfer_to_account_id');
+  const watchedOccurredAt = watch('occurred_at');
+  const watchedAttachmentUrl = watch('attachment_url');
 
   // Filter categories based on transaction type
   const filteredCategories = categories.filter(category => {
@@ -99,12 +106,118 @@ export function TransactionForm({
     }
   }, [watchedType, setValue, transaction?.type, defaultType]);
 
+  // Clear errors when fields are corrected
+  useEffect(() => {
+    if (watchedDescription && watchedDescription.trim()) {
+      clearErrors('description');
+      clearErrors('root'); // Clear general error when any field is corrected
+    }
+  }, [watchedDescription, clearErrors]);
+
+  useEffect(() => {
+    if (watchedAccountId) {
+      clearErrors('account_id');
+      clearErrors('root');
+    }
+  }, [watchedAccountId, clearErrors]);
+
+  useEffect(() => {
+    if (watchedCategoryId && watchedType !== 'transfer') {
+      clearErrors('category_id');
+      clearErrors('root');
+    }
+  }, [watchedCategoryId, watchedType, clearErrors]);
+
+  useEffect(() => {
+    if (watchedTransferToAccountId && watchedType === 'transfer') {
+      clearErrors('transfer_to_account_id');
+      clearErrors('root');
+      // Also clear error if accounts are now different
+      if (watchedAccountId && watchedTransferToAccountId !== watchedAccountId) {
+        clearErrors('transfer_to_account_id');
+      }
+    }
+  }, [watchedTransferToAccountId, watchedType, watchedAccountId, clearErrors]);
+
+  useEffect(() => {
+    if (watchedAmount && watchedAmount > 0) {
+      clearErrors('amount');
+      clearErrors('root');
+    }
+  }, [watchedAmount, clearErrors]);
+
+  useEffect(() => {
+    if (watchedOccurredAt) {
+      clearErrors('occurred_at');
+      clearErrors('root');
+    }
+  }, [watchedOccurredAt, clearErrors]);
+
+  useEffect(() => {
+    if (watchedAttachmentUrl !== undefined) {
+      clearErrors('attachment_url');
+      clearErrors('root');
+    }
+  }, [watchedAttachmentUrl, clearErrors]);
+
   const onSubmit = async (data: TransactionFormData) => {
     try {
       setIsSubmitting(true);
       clearErrors();
 
-      // Validate based on transaction type
+      // Final validations before submission
+      let hasErrors = false;
+
+      if (!data.description?.trim()) {
+        setError('description', { message: 'El concepto es requerido' });
+        hasErrors = true;
+      }
+
+      if (!data.account_id) {
+        setError('account_id', { message: 'Debes seleccionar una cuenta' });
+        hasErrors = true;
+      }
+
+      if (data.type !== 'transfer' && !data.category_id) {
+        setError('category_id', { message: 'Debes seleccionar una categoría' });
+        hasErrors = true;
+      }
+
+      if (data.type === 'transfer' && !data.transfer_to_account_id) {
+        setError('transfer_to_account_id', { message: 'Debes seleccionar una cuenta destino' });
+        hasErrors = true;
+      }
+
+      if (data.type === 'transfer' && data.account_id === data.transfer_to_account_id) {
+        setError('transfer_to_account_id', { message: 'La cuenta origen y destino deben ser diferentes' });
+        hasErrors = true;
+      }
+
+      if (!data.amount || data.amount <= 0) {
+        setError('amount', { message: 'El monto debe ser mayor a cero' });
+        hasErrors = true;
+      }
+
+      if (!data.occurred_at) {
+        setError('occurred_at', { message: 'La fecha es requerida' });
+        hasErrors = true;
+      }
+
+      // Validate attachment URL if provided
+      if (data.attachment_url && data.attachment_url.trim()) {
+        try {
+          new URL(data.attachment_url);
+        } catch {
+          setError('attachment_url', { message: 'La URL del adjunto no es válida' });
+          hasErrors = true;
+        }
+      }
+
+      if (hasErrors) {
+        return;
+      }
+
+      // Validate based on transaction type (date is already in correct format)
       const validatedData = validateTransactionByType(data);
 
       if (transaction) {
@@ -124,14 +237,28 @@ export function TransactionForm({
       onSuccess?.();
     } catch (error) {
       if (error instanceof Error) {
-        // Handle validation errors
-        if (error.message.includes('categoría')) {
+        // Handle API validation errors
+        const errorMessage = error.message.toLowerCase();
+        
+        if (errorMessage.includes('categoría')) {
           setError('category_id', { message: error.message });
-        } else if (error.message.includes('cuenta')) {
+        } else if (errorMessage.includes('cuenta destino') || errorMessage.includes('transfer')) {
           setError('transfer_to_account_id', { message: error.message });
+        } else if (errorMessage.includes('cuenta')) {
+          setError('account_id', { message: error.message });
+        } else if (errorMessage.includes('monto') || errorMessage.includes('amount')) {
+          setError('amount', { message: error.message });
+        } else if (errorMessage.includes('fecha') || errorMessage.includes('date')) {
+          setError('occurred_at', { message: error.message });
+        } else if (errorMessage.includes('descripción') || errorMessage.includes('concepto')) {
+          setError('description', { message: error.message });
+        } else if (errorMessage.includes('url') || errorMessage.includes('adjunto')) {
+          setError('attachment_url', { message: error.message });
         } else {
           setError('root', { message: error.message });
         }
+      } else {
+        setError('root', { message: 'Error desconocido al procesar la transacción' });
       }
       console.error('Error submitting transaction form:', error);
     } finally {
@@ -150,7 +277,7 @@ export function TransactionForm({
         {/* 1. Fecha y Tipo de Transacción */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="occurred_at">Fecha</Label>
+            <Label htmlFor="occurred_at">Fecha <span className="text-red-500">*</span></Label>
             <Input
               id="occurred_at"
               type="date"
@@ -163,7 +290,7 @@ export function TransactionForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Tipo de Transacción</Label>
+            <Label htmlFor="type">Tipo de Transacción <span className="text-red-500">*</span></Label>
             <Select
               value={watchedType}
               onValueChange={(value: TransactionType) => setValue('type', value)}
@@ -189,7 +316,7 @@ export function TransactionForm({
           {/* 3. Cuenta */}
           <div className="space-y-2">
             <Label htmlFor="account_id">
-              {watchedType === 'transfer' ? 'Cuenta Origen' : 'Cuenta'}
+              {watchedType === 'transfer' ? 'Cuenta Origen' : 'Cuenta'} <span className="text-red-500">*</span>
             </Label>
             <Select
               value={watchedAccountId}
@@ -214,7 +341,7 @@ export function TransactionForm({
           {/* 4. Categoría o Cuenta Destino */}
           {watchedType === 'transfer' ? (
             <div className="space-y-2">
-              <Label htmlFor="transfer_to_account_id">Cuenta Destino</Label>
+              <Label htmlFor="transfer_to_account_id">Cuenta Destino <span className="text-red-500">*</span></Label>
               <Select
                 value={watch('transfer_to_account_id') || ''}
                 onValueChange={(value) => setValue('transfer_to_account_id', value)}
@@ -236,7 +363,7 @@ export function TransactionForm({
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="category_id">Categoría</Label>
+              <Label htmlFor="category_id">Categoría <span className="text-red-500">*</span></Label>
               <Select
                 value={watch('category_id') || ''}
                 onValueChange={(value) => setValue('category_id', value)}
@@ -261,7 +388,7 @@ export function TransactionForm({
 
         {/* 5. Concepto */}
         <div className="space-y-2">
-          <Label htmlFor="description">Concepto</Label>
+          <Label htmlFor="description">Concepto <span className="text-red-500">*</span></Label>
           <Input
             id="description"
             placeholder={
@@ -279,7 +406,7 @@ export function TransactionForm({
 
         {/* 6. Monto */}
         <div className="space-y-2">
-          <Label htmlFor="amount">Monto</Label>
+          <Label htmlFor="amount">Monto <span className="text-red-500">*</span></Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
               RD$
@@ -361,6 +488,13 @@ export function TransactionForm({
                 URL del archivo adjunto (recibo, factura, etc.)
               </p>
             </div>
+          </div>
+        )}
+
+        {/* General Error Message */}
+        {errors.root && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-sm text-red-600">{errors.root.message}</p>
           </div>
         )}
 

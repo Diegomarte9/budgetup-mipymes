@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { LoadingProvider } from './loading-provider';
+import { MembershipProvider } from '@/contexts/MembershipContext';
 import { useState } from 'react';
 import { createQueryClient } from '@/lib/react-query';
 
@@ -23,16 +24,18 @@ export function Providers({ children }: ProvidersProps) {
         enableSystem
         disableTransitionOnChange
       >
-        <LoadingProvider>
-          {children}
-          <Toaster 
-            position='top-right' 
-            expand={false} 
-            richColors 
-            closeButton 
-            className="dark-mode-transition"
-          />
-        </LoadingProvider>
+        <MembershipProvider>
+          <LoadingProvider>
+            {children}
+            <Toaster 
+              position='top-right' 
+              expand={false} 
+              richColors 
+              closeButton 
+              className="dark-mode-transition"
+            />
+          </LoadingProvider>
+        </MembershipProvider>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

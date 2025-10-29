@@ -82,12 +82,12 @@ export async function PUT(
     }
 
     // Prepare update data (remove undefined values)
+    // Note: updated_at will be handled by the database trigger
     const updateData = Object.fromEntries(
       Object.entries({
         name: validatedData.name,
         type: validatedData.type,
         color: validatedData.color,
-        updated_at: new Date().toISOString(),
       }).filter(([_, value]) => value !== undefined)
     );
 

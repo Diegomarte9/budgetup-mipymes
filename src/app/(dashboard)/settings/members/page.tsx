@@ -165,10 +165,13 @@ export default function SettingsMembersPage() {
       {currentMembership.role === 'admin' && !permissionValidated ? (
         <Card className="dark-mode-transition">
           <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                <span>Validando permisos...</span>
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 bg-muted animate-pulse rounded w-48 mx-auto"></div>
+                <div className="h-3 bg-muted animate-pulse rounded w-32 mx-auto"></div>
               </div>
             </div>
           </CardContent>

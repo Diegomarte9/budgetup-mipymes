@@ -54,126 +54,66 @@ export async function GET(request: NextRequest) {
     let totalExpenses = 0;
     let dateRange: { startDate?: string; endDate?: string; month?: string } = {};
 
-    if (validatedParams.startDate && validatedParams.endDate) {
-      // Use custom date range - query transactions directly for flexibility
-      const startDate = new Date(validatedParams.startDate).toISOString().split('T')[0];
-      const endDate = new Date(validatedParams.endDate).toISOString().split('T')[0];
-      
-      const { data: transactionData, error: transactionError } = await supabase
-        .from('transactions')
-        .select(`
-          amount,
-          category_id,
-          categories!inner(
-            name,
-            color
-          )
-        `)
-        .eq('organization_id', validatedParams.organizationId)
-        .eq('type', 'expense')
-        .gte('occurred_at', startDate)
-        .lte('occurred_at', endDate);
+    // Get ALL expense transactions with categories (no date filtering)
+    const { data: transactionData, error: transactionError } = await supabase
+      .from('transactions')
+      .select(`
+        amount,
+        category_id,
+        categories(
+          name,
+          color
+        )
+      `)
+      .eq('organization_id', validatedParams.organizationId)
+      .eq('type', 'expense')
+      .not('category_id', 'is', null);
 
-      if (transactionError) {
-        console.error('Error fetching transaction data:', transactionError);
-        return NextResponse.json({ error: 'Failed to fetch transaction data' }, { status: 500 });
-      }
-
-      // Aggregate by category
-      const categoryMap = new Map();
-      totalExpenses = 0;
-
-      transactionData?.forEach(transaction => {
-        const categoryId = transaction.category_id;
-        const amount = parseFloat(transaction.amount);
-        totalExpenses += amount;
-
-        if (categoryMap.has(categoryId)) {
-          const existing = categoryMap.get(categoryId);
-          existing.total_amount += amount;
-          existing.transaction_count += 1;
-        } else {
-          categoryMap.set(categoryId, {
-            category_id: categoryId,
-            category_name: (transaction.categories as any).name,
-            category_color: (transaction.categories as any).color,
-            total_amount: amount,
-            transaction_count: 1,
-          });
-        }
-      });
-
-      // Convert to array and calculate percentages
-      categoriesData = Array.from(categoryMap.values())
-        .map(cat => ({
-          ...cat,
-          percentage: totalExpenses > 0 ? Math.round((cat.total_amount / totalExpenses) * 100 * 100) / 100 : 0,
-        }))
-        .sort((a, b) => b.total_amount - a.total_amount)
-        .slice(0, validatedParams.limit);
-
-      dateRange = { startDate, endDate };
-    } else {
-      // Use month-based query - calculate manually since view doesn't exist
-      const targetMonth = validatedParams.month || new Date().toISOString().slice(0, 7);
-      const monthStart = `${targetMonth}-01`;
-      const monthEnd = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0).toISOString().split('T')[0];
-      
-      const { data: transactionData, error: transactionError } = await supabase
-        .from('transactions')
-        .select(`
-          amount,
-          category_id,
-          categories!inner(
-            name,
-            color
-          )
-        `)
-        .eq('organization_id', validatedParams.organizationId)
-        .eq('type', 'expense')
-        .gte('occurred_at', monthStart)
-        .lte('occurred_at', monthEnd);
-
-      if (transactionError) {
-        console.error('Error fetching transaction data:', transactionError);
-        return NextResponse.json({ error: 'Failed to fetch transaction data' }, { status: 500 });
-      }
-
-      // Aggregate by category
-      const categoryMap = new Map();
-      totalExpenses = 0;
-
-      transactionData?.forEach(transaction => {
-        const categoryId = transaction.category_id;
-        const amount = parseFloat(transaction.amount);
-        totalExpenses += amount;
-
-        if (categoryMap.has(categoryId)) {
-          const existing = categoryMap.get(categoryId);
-          existing.total_amount += amount;
-          existing.transaction_count += 1;
-        } else {
-          categoryMap.set(categoryId, {
-            category_id: categoryId,
-            category_name: (transaction.categories as any).name,
-            category_color: (transaction.categories as any).color,
-            total_amount: amount,
-            transaction_count: 1,
-          });
-        }
-      });
-
-      // Convert to array and calculate percentages
-      categoriesData = Array.from(categoryMap.values())
-        .map(cat => ({
-          ...cat,
-          percentage: totalExpenses > 0 ? Math.round((cat.total_amount / totalExpenses) * 100 * 100) / 100 : 0,
-        }))
-        .sort((a, b) => b.total_amount - a.total_amount)
-        .slice(0, validatedParams.limit);
-
-      dateRange = { month: monthStart };
+    if (transactionError) {
+      console.error('Error fetching transaction data:', transactionError);
+      return NextResponse.json({ error: 'Failed to fetch transaction data' }, { status: 500 });
     }
+
+
+
+    // Aggregate by category
+    const categoryMap = new Map();
+    totalExpenses = 0;
+
+    transactionData?.forEach(transaction => {
+      const categoryId = transaction.category_id;
+      const amount = parseFloat(transaction.amount);
+      totalExpenses += amount;
+
+      if (categoryMap.has(categoryId)) {
+        const existing = categoryMap.get(categoryId);
+        existing.total_amount += amount;
+        existing.transaction_count += 1;
+      } else {
+        categoryMap.set(categoryId, {
+          category_id: categoryId,
+          category_name: (transaction.categories as any).name,
+          category_color: (transaction.categories as any).color,
+          total_amount: amount,
+          transaction_count: 1,
+        });
+      }
+    });
+
+
+
+    // Convert to array and calculate percentages
+    categoriesData = Array.from(categoryMap.values())
+      .map(cat => ({
+        ...cat,
+        percentage: totalExpenses > 0 ? Math.round((cat.total_amount / totalExpenses) * 100 * 100) / 100 : 0,
+      }))
+      .sort((a, b) => b.total_amount - a.total_amount)
+      .slice(0, validatedParams.limit);
+
+
+
+    dateRange = { period: 'all-time' };
 
     const response = NextResponse.json({
       data: categoriesData,
@@ -183,9 +123,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Add cache headers for optimization (5 minutes cache)
-    const cacheKey = validatedParams.startDate && validatedParams.endDate 
-      ? `${validatedParams.organizationId}-${validatedParams.startDate}-${validatedParams.endDate}`
-      : `${validatedParams.organizationId}-${dateRange.month}`;
+    const cacheKey = `${validatedParams.organizationId}-all-time`;
     
     response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=300');
     response.headers.set('ETag', `"top-categories-${cacheKey}"`);

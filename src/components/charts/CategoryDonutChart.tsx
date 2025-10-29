@@ -49,7 +49,7 @@ export function CategoryDonutChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Gastos por Categoría</CardTitle>
+          <CardTitle>Gastos por Categoría (Histórico)</CardTitle>
         </CardHeader>
         <CardContent>
           <div 
@@ -69,7 +69,7 @@ export function CategoryDonutChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Gastos por Categoría</CardTitle>
+          <CardTitle>Gastos por Categoría (Histórico)</CardTitle>
         </CardHeader>
         <CardContent>
           <div 
@@ -167,7 +167,7 @@ export function CategoryDonutChart({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Gastos por Categoría</span>
+          <span>Gastos por Categoría (Histórico)</span>
           <span className="text-sm font-normal text-muted-foreground">
             Total: {formatCurrency(totalExpenses, currency)}
           </span>

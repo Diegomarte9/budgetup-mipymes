@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -43,6 +43,7 @@ export function InviteUserForm({
 
   const form = useForm<CreateInvitationFormData>({
     resolver: zodResolver(createInvitationSchema),
+    mode: 'onChange', // Enable real-time validation
     defaultValues: {
       email: '',
       role: 'member',
@@ -50,9 +51,29 @@ export function InviteUserForm({
     },
   });
 
+  // Watch form values to clear errors when corrected
+  const watchedEmail = form.watch('email');
+  const watchedRole = form.watch('role');
+
+  // Clear errors when fields are corrected
+  useEffect(() => {
+    if (watchedEmail && watchedEmail.trim()) {
+      form.clearErrors('email');
+    }
+  }, [watchedEmail, form]);
+
+  useEffect(() => {
+    if (watchedRole) {
+      form.clearErrors('role');
+    }
+  }, [watchedRole, form]);
+
   const onSubmit = async (data: CreateInvitationFormData) => {
     try {
       setIsLoading(true);
+
+      // Clear any previous form errors
+      form.clearErrors();
 
       const response = await fetch('/api/invitations', {
         method: 'POST',
@@ -65,6 +86,45 @@ export function InviteUserForm({
       const result = await response.json();
 
       if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 409) {
+          if (result.error.includes('ya es miembro')) {
+            form.setError('email', {
+              type: 'manual',
+              message: 'Este usuario ya es miembro de la organización'
+            });
+          } else if (result.error.includes('invitación pendiente')) {
+            form.setError('email', {
+              type: 'manual',
+              message: 'Ya existe una invitación pendiente para este email'
+            });
+          } else {
+            form.setError('email', {
+              type: 'manual',
+              message: result.error
+            });
+          }
+          return;
+        } else if (response.status === 400) {
+          // Handle validation errors
+          if (result.details && Array.isArray(result.details)) {
+            result.details.forEach((detail: any) => {
+              if (detail.path && detail.path.length > 0) {
+                form.setError(detail.path[0] as keyof CreateInvitationFormData, {
+                  type: 'manual',
+                  message: detail.message
+                });
+              }
+            });
+          } else {
+            toast.error(result.error || 'Datos de entrada inválidos');
+          }
+          return;
+        } else if (response.status === 403) {
+          toast.error('No tienes permisos para enviar invitaciones');
+          return;
+        }
+        
         throw new Error(result.error || 'Error al enviar la invitación');
       }
 
@@ -93,7 +153,7 @@ export function InviteUserForm({
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email del usuario</FormLabel>
+              <FormLabel>Email del usuario <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input
                   type="email"
@@ -112,7 +172,7 @@ export function InviteUserForm({
           name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Rol</FormLabel>
+              <FormLabel>Rol <span className="text-red-500">*</span></FormLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
