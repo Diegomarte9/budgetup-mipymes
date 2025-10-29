@@ -11,8 +11,7 @@ export const transactionSchema = z.object({
   ),
   amount: z
     .number({
-      required_error: 'El monto es requerido',
-      invalid_type_error: 'El monto debe ser un número'
+      message: 'El monto debe ser un número'
     })
     .positive('El monto debe ser mayor a cero')
     .min(0.01, 'El monto mínimo es RD$0.01')
@@ -32,8 +31,7 @@ export const transactionSchema = z.object({
   currency: z.string().min(1, 'La moneda es requerida').default('DOP'),
   description: z
     .string({
-      required_error: 'El concepto es requerido',
-      invalid_type_error: 'El concepto debe ser texto'
+      message: 'El concepto debe ser texto'
     })
     .min(1, 'El concepto no puede estar vacío')
     .max(500, 'El concepto no puede exceder 500 caracteres')
@@ -43,8 +41,7 @@ export const transactionSchema = z.object({
     }),
   occurred_at: z
     .string({
-      required_error: 'La fecha es requerida',
-      invalid_type_error: 'La fecha debe ser una cadena de texto'
+      message: 'La fecha debe ser una cadena de texto'
     })
     .min(1, 'La fecha es requerida')
     .refine(
@@ -65,8 +62,7 @@ export const transactionSchema = z.object({
     ),
   account_id: z
     .string({
-      required_error: 'Debes seleccionar una cuenta',
-      invalid_type_error: 'El ID de cuenta debe ser texto'
+      message: 'El ID de cuenta debe ser texto'
     })
     .uuid('Selecciona una cuenta válida')
     .min(1, 'Debes seleccionar una cuenta'),

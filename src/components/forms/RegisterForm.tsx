@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { useAuth } from '@/hooks/useAuth';
 import { signUpSchema, type SignUpFormData } from '@/lib/validations/auth';
+import { toast } from 'sonner';
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);

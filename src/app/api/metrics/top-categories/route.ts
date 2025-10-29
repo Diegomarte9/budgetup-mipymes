@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     let categoriesData;
     let totalExpenses = 0;
-    let dateRange: { startDate?: string; endDate?: string; month?: string } = {};
+    let dateRange: { startDate?: string; endDate?: string; month?: string; period?: string } = {};
 
     // Get ALL expense transactions with categories (no date filtering)
     const { data: transactionData, error: transactionError } = await supabase

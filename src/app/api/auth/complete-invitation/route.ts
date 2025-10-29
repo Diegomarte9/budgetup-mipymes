@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: `¡Te has unido exitosamente a ${invitation.organizations?.name}!`,
+      message: `¡Te has unido exitosamente a ${(invitation.organizations as any)?.name || 'la organización'}!`,
       organization: invitation.organizations,
       user: signInData.user,
     });

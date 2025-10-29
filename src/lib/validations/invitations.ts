@@ -4,8 +4,7 @@ import { z } from 'zod';
 export const createInvitationSchema = z.object({
   email: z
     .string({
-      required_error: 'El email es requerido',
-      invalid_type_error: 'El email debe ser una cadena de texto'
+      message: 'El email es requerido'
     })
     .min(1, 'El email no puede estar vacío')
     .max(255, 'El email no puede exceder 255 caracteres')
@@ -21,16 +20,14 @@ export const createInvitationSchema = z.object({
     }),
   role: z
     .enum(['admin', 'member'], {
-      required_error: 'El rol es requerido',
-      invalid_type_error: 'Selecciona un rol válido'
+      message: 'Selecciona un rol válido'
     })
     .refine((val) => ['admin', 'member'].includes(val), {
       message: 'El rol debe ser "admin" o "member"',
     }),
   organizationId: z
     .string({
-      required_error: 'El ID de organización es requerido',
-      invalid_type_error: 'El ID de organización debe ser una cadena de texto'
+      message: 'El ID de organización es requerido'
     })
     .uuid('El ID de organización debe ser un UUID válido')
     .min(1, 'El ID de organización no puede estar vacío'),
