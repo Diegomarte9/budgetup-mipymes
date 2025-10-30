@@ -32,7 +32,12 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email('Email inválido'),
 });
 
-// Reset password schema
+// OTP verification schema
+export const otpVerificationSchema = z.object({
+  otp: z.string().min(6, 'El código debe tener 6 dígitos').max(6, 'El código debe tener 6 dígitos'),
+});
+
+// Reset password schema (only passwords)
 export const resetPasswordSchema = z
   .object({
     password: passwordSchema,
@@ -47,4 +52,5 @@ export const resetPasswordSchema = z
 export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type SignInFormData = z.infer<typeof signInSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+export type OtpVerificationFormData = z.infer<typeof otpVerificationSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;

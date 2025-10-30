@@ -1,5 +1,15 @@
+'use client';
+
+import { useState } from 'react';
+import { OtpVerificationForm } from '@/components/forms/OtpVerificationForm';
 import { ResetPasswordForm } from '@/components/forms/ResetPasswordForm';
 
 export default function ResetPasswordPage() {
-  return <ResetPasswordForm />;
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
+
+  return !isOtpVerified ? (
+    <OtpVerificationForm onVerified={() => setIsOtpVerified(true)} />
+  ) : (
+    <ResetPasswordForm />
+  );
 }

@@ -235,32 +235,70 @@ export function useAuth() {
     try {
       setAuthState(prev => ({ ...prev, loading: true }));
 
+      // Use resetPasswordForEmail which sends a recovery link
+      // We'll extract the token from the link for OTP-like experience
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/reset-password-callback`,
       });
 
       if (error) throw error;
 
-      toast.success('Se ha enviado un enlace de restablecimiento a tu email');
+      // Save email to localStorage for the reset process
+      localStorage.setItem('reset_email', data.email);
+
+      toast.success('Se ha enviado un enlace de restablecimiento a tu correo electrónico. Cópialo y pégalo aquí para obtener el código.');
+      router.push('/auth/reset-password');
       return { error: null };
     } catch (error) {
       const authError = error as AuthError;
-      toast.error(authError.message || 'Error al enviar el email');
+      toast.error(authError.message || 'Error al enviar el enlace de restablecimiento');
       return { error: authError };
     } finally {
       setAuthState(prev => ({ ...prev, loading: false }));
     }
   };
 
-  const resetPassword = async (data: ResetPasswordFormData) => {
+  const verifyResetLink = async (resetLink: string) => {
     try {
       setAuthState(prev => ({ ...prev, loading: true }));
 
+      // Extract the code from the reset link
+      const url = new URL(resetLink);
+      const code = url.searchParams.get('code');
+      
+      if (!code) {
+        throw new Error('Enlace inválido. No se encontró el código de verificación.');
+      }
+
+      // Exchange the code for a session
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (error) throw error;
+
+      toast.success('Enlace verificado correctamente');
+      return { error: null };
+    } catch (error) {
+      const authError = error as AuthError;
+      toast.error(authError.message || 'Enlace inválido o expirado');
+      return { error: authError };
+    } finally {
+      setAuthState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const resetPassword = async (data: { password: string; confirmPassword: string }) => {
+    try {
+      setAuthState(prev => ({ ...prev, loading: true }));
+
+      // Update password (user should already be authenticated after OTP verification)
       const { error } = await supabase.auth.updateUser({
         password: data.password,
       });
 
       if (error) throw error;
+
+      // Clear stored email
+      localStorage.removeItem('reset_email');
 
       toast.success('Contraseña actualizada exitosamente');
       router.push('/dashboard');
@@ -282,6 +320,7 @@ export function useAuth() {
     signIn,
     signOut,
     forgotPassword,
+    verifyResetLink,
     resetPassword,
   };
 }

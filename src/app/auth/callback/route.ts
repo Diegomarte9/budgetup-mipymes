@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const type = searchParams.get('type');
   const next = searchParams.get('next') ?? '/dashboard';
 
   if (code) {
@@ -14,6 +15,17 @@ export async function GET(request: Request) {
       const forwardedHost = request.headers.get('x-forwarded-host'); // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === 'development';
       
+      // Check if this is a password recovery callback
+      if (type === 'recovery') {
+        const redirectUrl = isLocalEnv 
+          ? `${origin}/auth/reset-password`
+          : forwardedHost 
+            ? `https://${forwardedHost}/auth/reset-password`
+            : `${origin}/auth/reset-password`;
+        return NextResponse.redirect(redirectUrl);
+      }
+      
+      // Regular authentication callback
       if (isLocalEnv) {
         // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
         return NextResponse.redirect(`${origin}${next}`);

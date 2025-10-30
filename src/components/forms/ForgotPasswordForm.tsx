@@ -43,14 +43,14 @@ export function ForgotPasswordForm() {
             Email Enviado
           </CardTitle>
           <CardDescription className="text-slate-300">
-            Hemos enviado un enlace de restablecimiento de contraseña a{' '}
+            Hemos enviado un enlace de restablecimiento a{' '}
             <strong className="text-red-400">{getValues('email')}</strong>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-lg bg-gray-800/50 border border-gray-600/30 p-4">
             <p className="text-sm text-gray-300">
-              Revisa tu bandeja de entrada y haz clic en el enlace para restablecer tu contraseña.
+              Revisa tu bandeja de entrada, copia el enlace y pégalo en la siguiente página.
               Si no ves el email, revisa tu carpeta de spam.
             </p>
           </div>
@@ -61,7 +61,7 @@ export function ForgotPasswordForm() {
               variant="outline"
               className="w-full border-white text-white hover:bg-white hover:text-black"
             >
-              Enviar otro email
+              Enviar otro enlace
             </Button>
             <Link href="/auth/login" className="block">
               <Button variant="ghost" className="w-full text-white hover:bg-white/10">

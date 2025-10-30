@@ -136,45 +136,198 @@ export function CategoryListSkeleton() {
   );
 }
 
+// Transaction KPI Cards Skeleton
+export function TransactionKPICardsSkeleton() {
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i} className="relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+            <Skeleton className="h-5 w-5 rounded" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-8 w-28 mb-2" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </CardContent>
+          {/* Shimmer effect */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 // Transaction Row Skeleton
 export function TransactionRowSkeleton() {
   return (
-    <div className="flex items-center justify-between p-4 border-b">
-      <div className="flex items-center space-x-4">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-24" />
+    <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+      <td className="px-6 py-4">
+        <div className="flex items-center space-x-3">
+          <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <Skeleton className="h-4 w-20" />
+      </td>
+      <td className="px-6 py-4">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="px-6 py-4">
+        <Skeleton className="h-4 w-20" />
+      </td>
+      <td className="px-6 py-4">
+        <Skeleton className="h-4 w-16" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="flex items-center justify-end space-x-2">
+          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded" />
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// Transaction Table Skeleton
+export function TransactionTableSkeleton() {
+  return (
+    <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <table className="w-full">
+        <thead className="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th className="px-6 py-3 text-left">
+              <Skeleton className="h-4 w-24" />
+            </th>
+            <th className="px-6 py-3 text-left">
+              <Skeleton className="h-4 w-16" />
+            </th>
+            <th className="px-6 py-3 text-left">
+              <Skeleton className="h-4 w-20" />
+            </th>
+            <th className="px-6 py-3 text-left">
+              <Skeleton className="h-4 w-16" />
+            </th>
+            <th className="px-6 py-3 text-left">
+              <Skeleton className="h-4 w-12" />
+            </th>
+            <th className="px-6 py-3 text-right">
+              <Skeleton className="h-4 w-16" />
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          {[...Array(10)].map((_, i) => (
+            <TransactionRowSkeleton key={i} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Transaction Filters Skeleton
+export function TransactionFiltersSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Search and Filter Toggle */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex-1 max-w-md">
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-32" />
         </div>
       </div>
-      <div className="text-right space-y-2">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-3 w-16" />
+
+      {/* Filter Options */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
     </div>
   );
 }
 
-// Transaction List Skeleton
+// Transaction Pagination Skeleton
+export function TransactionPaginationSkeleton() {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-2">
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <div className="flex items-center space-x-2">
+        <Skeleton className="h-10 w-20" />
+        <Skeleton className="h-10 w-10" />
+        <Skeleton className="h-10 w-10" />
+        <Skeleton className="h-10 w-20" />
+      </div>
+    </div>
+  );
+}
+
+// Complete Transaction List Skeleton
 export function TransactionListSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header with filters skeleton */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Skeleton className="h-10 flex-1" />
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-10 w-32" />
+      {/* Page Header */}
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-64" />
       </div>
 
-      {/* Transaction rows skeleton */}
+      {/* KPI Cards */}
+      <TransactionKPICardsSkeleton />
+
+      {/* Filters */}
+      <TransactionFiltersSkeleton />
+
+      {/* Transaction Table */}
       <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-28" />
+            </div>
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
-          {[...Array(8)].map((_, i) => (
-            <TransactionRowSkeleton key={i} />
-          ))}
+          <TransactionTableSkeleton />
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      <TransactionPaginationSkeleton />
     </div>
   );
 }
