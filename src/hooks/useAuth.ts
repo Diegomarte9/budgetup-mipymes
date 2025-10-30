@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { User, AuthError } from '@supabase/supabase-js';
+import { AuthError } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useSession } from '@/components/providers/session-provider';
 import type {
   SignUpFormData,
   SignInFormData,
@@ -10,88 +11,17 @@ import type {
   ResetPasswordFormData,
 } from '@/lib/validations/auth';
 
-interface AuthState {
-  user: User | null;
-  loading: boolean;
-  initialized: boolean;
-}
-
 export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    initialized: false,
-  });
+  const { user, loading, initialized } = useSession();
+  const [actionLoading, setActionLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      setAuthState({
-        user: session?.user ?? null,
-        loading: false,
-        initialized: true,
-      });
-    };
-
-    getInitialSession();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setAuthState({
-        user: session?.user ?? null,
-        loading: false,
-        initialized: true,
-      });
-
-      // Handle auth events
-      if (event === 'SIGNED_IN') {
-        // Check for pending invitation after sign in
-        const pendingInvitation = sessionStorage.getItem('pendingInvitation');
-        if (pendingInvitation) {
-          try {
-            const invitationData = JSON.parse(pendingInvitation);
-            // Accept the invitation automatically
-            const response = await fetch('/api/invitations/accept', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ code: invitationData.code }),
-            });
-
-            if (response.ok) {
-              sessionStorage.removeItem('pendingInvitation');
-              toast.success(`¡Te has unido exitosamente a ${invitationData.organizationName}!`);
-            }
-          } catch (error) {
-            console.error('Error processing pending invitation:', error);
-          }
-        }
-        
-        // Let the dashboard page handle onboarding redirection
-        router.push('/dashboard');
-      } else if (event === 'SIGNED_OUT') {
-        // Don't redirect to login if user is on invitation page
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/invitation')) {
-          router.push('/auth/login');
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [router, supabase.auth]);
+  // Session management is now handled by SessionProvider
 
   const signUp = async (data: SignUpFormData) => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true }));
+      setActionLoading(true);
 
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
@@ -186,13 +116,13 @@ export function useAuth() {
       toast.error(errorMessage);
       return { data: null, error: authError };
     } finally {
-      setAuthState(prev => ({ ...prev, loading: false }));
+      setActionLoading(false);
     }
   };
 
   const signIn = async (data: SignInFormData) => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true }));
+      setActionLoading(true);
 
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -208,13 +138,13 @@ export function useAuth() {
       toast.error(authError.message || 'Error al iniciar sesión');
       return { data: null, error: authError };
     } finally {
-      setAuthState(prev => ({ ...prev, loading: false }));
+      setActionLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true }));
+      setActionLoading(true);
 
       const { error } = await supabase.auth.signOut();
 
@@ -227,13 +157,13 @@ export function useAuth() {
       toast.error(authError.message || 'Error al cerrar sesión');
       return { error: authError };
     } finally {
-      setAuthState(prev => ({ ...prev, loading: false }));
+      setActionLoading(false);
     }
   };
 
   const forgotPassword = async (data: ForgotPasswordFormData) => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true }));
+      setActionLoading(true);
 
       // Use resetPasswordForEmail which sends a recovery link
       // We'll extract the token from the link for OTP-like experience
@@ -254,13 +184,13 @@ export function useAuth() {
       toast.error(authError.message || 'Error al enviar el enlace de restablecimiento');
       return { error: authError };
     } finally {
-      setAuthState(prev => ({ ...prev, loading: false }));
+      setActionLoading(false);
     }
   };
 
   const verifyResetLink = async (resetLink: string) => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true }));
+      setActionLoading(true);
 
       // Extract the code from the reset link
       const url = new URL(resetLink);
@@ -282,13 +212,13 @@ export function useAuth() {
       toast.error(authError.message || 'Enlace inválido o expirado');
       return { error: authError };
     } finally {
-      setAuthState(prev => ({ ...prev, loading: false }));
+      setActionLoading(false);
     }
   };
 
   const resetPassword = async (data: { password: string; confirmPassword: string }) => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true }));
+      setActionLoading(true);
 
       // Update password (user should already be authenticated after OTP verification)
       const { error } = await supabase.auth.updateUser({
@@ -308,14 +238,14 @@ export function useAuth() {
       toast.error(authError.message || 'Error al actualizar la contraseña');
       return { error: authError };
     } finally {
-      setAuthState(prev => ({ ...prev, loading: false }));
+      setActionLoading(false);
     }
   };
 
   return {
-    user: authState.user,
-    loading: authState.loading,
-    initialized: authState.initialized,
+    user,
+    loading: loading || actionLoading,
+    initialized,
     signUp,
     signIn,
     signOut,
