@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('category_id');
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
+    const search = searchParams.get('search');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
@@ -87,6 +88,12 @@ export async function GET(request: NextRequest) {
 
     if (endDate) {
       query = query.lte('occurred_at', endDate);
+    }
+
+    // Apply search filter (case-insensitive search in description and notes)
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      query = query.or(`description.ilike.%${searchTerm}%,notes.ilike.%${searchTerm}%`);
     }
 
     // Apply pagination

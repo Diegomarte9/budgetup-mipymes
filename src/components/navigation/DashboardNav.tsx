@@ -35,31 +35,37 @@ const navigation = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: Home,
+    disabled: false,
   },
   {
     name: 'Transacciones',
     href: '/transactions',
     icon: Wallet,
+    disabled: false,
   },
   {
     name: 'Cuentas',
     href: '/accounts',
     icon: Building2,
+    disabled: false,
   },
   {
     name: 'Categorías',
     href: '/categories',
     icon: Tag,
+    disabled: false,
   },
   {
     name: 'Reportes',
     href: '/reports',
     icon: FileText,
+    disabled: true,
   },
   {
     name: 'Actividad',
     href: '/activity',
     icon: Activity,
+    disabled: true,
   },
 ];
 
@@ -168,6 +174,22 @@ export function DashboardNav({
               const Icon = item.icon;
               const isActive = pathname === item.href;
 
+              if (item.disabled) {
+                return (
+                  <Button
+                    key={item.name}
+                    variant='ghost'
+                    disabled
+                    className={cn(
+                      'flex items-center space-x-2 px-4 py-2 h-10 opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    <Icon className='h-4 w-4' />
+                    <span>{item.name}</span>
+                  </Button>
+                );
+              }
+
               return (
                 <Link key={item.name} href={item.href}>
                   <Button
@@ -236,6 +258,23 @@ export function DashboardNav({
           {navigation.map(item => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+
+            if (item.disabled) {
+              return (
+                <Button
+                  key={item.name}
+                  variant='ghost'
+                  size='sm'
+                  disabled
+                  className={cn(
+                    'flex items-center space-x-2 whitespace-nowrap px-3 sm:px-4 py-2 h-9 opacity-50 cursor-not-allowed'
+                  )}
+                >
+                  <Icon className='h-4 w-4 flex-shrink-0' />
+                  <span className='text-responsive-xs'>{item.name}</span>
+                </Button>
+              );
+            }
 
             return (
               <Link key={item.name} href={item.href}>

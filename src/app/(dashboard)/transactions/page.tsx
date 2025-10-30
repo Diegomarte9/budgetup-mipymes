@@ -93,6 +93,7 @@ export default function TransactionsPage() {
     categoryId: filters.categoryId,
     startDate,
     endDate,
+    search: filters.search,
     limit: ITEMS_PER_PAGE,
     offset,
   });
@@ -111,16 +112,8 @@ export default function TransactionsPage() {
   // Delete mutation
   const deleteTransactionMutation = useDeleteTransaction();
 
-  // Filter transactions by search term (client-side)
-  const filteredTransactions = useMemo(() => {
-    if (!filters.search) return transactions;
-    
-    const searchTerm = filters.search.toLowerCase();
-    return transactions.filter(transaction =>
-      transaction.description.toLowerCase().includes(searchTerm) ||
-      transaction.notes?.toLowerCase().includes(searchTerm)
-    );
-  }, [transactions, filters.search]);
+  // No need for client-side filtering anymore since search is handled server-side
+  const filteredTransactions = transactions;
 
 
 

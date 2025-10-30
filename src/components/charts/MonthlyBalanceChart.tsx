@@ -77,18 +77,171 @@ export function MonthlyBalanceChart({
     );
   }
 
+  // Debug: Log all data first to see what we're getting
+  if (process.env.NODE_ENV === 'development') {
+    console.log('DEBUG MonthlyBalanceChart - Raw data received:', data);
+    console.log('DEBUG MonthlyBalanceChart - Data length:', data.length);
+    console.log('DEBUG MonthlyBalanceChart - Sample data structure:', data[0]);
+  }
+
+  // Filter out any invalid data entries
+  const validData = data.filter(item => {
+    if (!item || !item.month) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Filtering out item with no month:', item);
+      }
+      return false;
+    }
+    
+    if (typeof item.month !== 'string') {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Month is not a string:', item.month, typeof item.month);
+      }
+      return false;
+    }
+    
+    // Validate that it looks like a date string
+    if (!item.month.includes('-')) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Month does not contain date separator:', item.month);
+      }
+      return false;
+    }
+    
+    return true;
+  });
+
+  if (validData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Balance Mensual</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div 
+            className="flex items-center justify-center text-muted-foreground"
+            style={{ height: `${height}px` }}
+          >
+            Los datos de fecha no son válidos
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Sort data by month to ensure proper chronological order
-  const sortedData = [...data].sort((a, b) => 
-    new Date(a.month).getTime() - new Date(b.month).getTime()
-  );
+  const sortedData = [...validData].sort((a, b) => {
+    try {
+      // Validate month strings
+      if (!a.month || !b.month || typeof a.month !== 'string' || typeof b.month !== 'string') {
+        return 0; // Keep original order if invalid
+      }
+      
+      // Parse dates correctly to avoid timezone issues
+      const partsA = a.month.split('-');
+      const partsB = b.month.split('-');
+      
+      if (partsA.length !== 3 || partsB.length !== 3) {
+        return 0; // Keep original order if invalid format
+      }
+      
+      const [yearA, monthA, dayA] = partsA.map(Number);
+      const [yearB, monthB, dayB] = partsB.map(Number);
+      
+      // Validate parsed numbers
+      if (isNaN(yearA) || isNaN(monthA) || isNaN(dayA) || 
+          isNaN(yearB) || isNaN(monthB) || isNaN(dayB)) {
+        return 0; // Keep original order if invalid numbers
+      }
+      
+      const dateA = new Date(yearA, monthA - 1, dayA);
+      const dateB = new Date(yearB, monthB - 1, dayB);
+      
+      // Validate dates
+      if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+        return 0; // Keep original order if invalid dates
+      }
+      
+      return dateA.getTime() - dateB.getTime();
+    } catch (error) {
+      console.error('Error sorting dates:', error);
+      return 0; // Keep original order if any error
+    }
+  });
+
+  // Debug: Log the data to see what we're getting (development only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('DEBUG MonthlyBalanceChart - Raw data:', data.slice(0, 3));
+    console.log('DEBUG MonthlyBalanceChart - Valid data:', validData.slice(0, 3));
+    console.log('DEBUG MonthlyBalanceChart - Sorted data:', sortedData.slice(0, 3));
+    console.log('DEBUG MonthlyBalanceChart - All month values:', data.map(item => item.month));
+    console.log('DEBUG MonthlyBalanceChart - Valid month values:', validData.map(item => item.month));
+  }
 
   // Format month labels
   const labels = sortedData.map(item => {
-    const date = new Date(item.month);
-    return date.toLocaleDateString('es-DO', { 
-      month: 'short', 
-      year: 'numeric' 
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Processing label for month:', item.month);
+    }
+    
+    try {
+      // Use ONLY manual parsing to avoid timezone issues
+      if (typeof item.month === 'string') {
+        // Handle different date formats
+        let parts;
+        
+        if (item.month.includes('T')) {
+          // Handle ISO format like "2024-01-01T00:00:00.000Z"
+          parts = item.month.split('T')[0].split('-');
+        } else if (item.month.includes('-')) {
+          // Handle simple format like "2024-01-01"
+          parts = item.month.split('-');
+        }
+        
+        if (parts && parts.length >= 3) {
+          const [year, month, day] = parts.map(Number);
+          if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            // Create date using manual parsing (month - 1 because Date constructor expects 0-based month)
+            const date = new Date(year, month - 1, day);
+            
+            if (!isNaN(date.getTime())) {
+              const formatted = date.toLocaleDateString('es-DO', { 
+                month: 'short', 
+                year: 'numeric' 
+              });
+              
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Successfully formatted:', item.month, '->', formatted);
+              }
+              
+              return formatted;
+            }
+          }
+        }
+      }
+      
+      // If manual parsing failed, try to extract year and month from string
+      const match = item.month.match(/(\d{4})-(\d{1,2})/);
+      if (match) {
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]);
+        if (!isNaN(year) && !isNaN(month)) {
+          const date = new Date(year, month - 1, 1);
+          return date.toLocaleDateString('es-DO', { 
+            month: 'short', 
+            year: 'numeric' 
+          });
+        }
+      }
+      
+      // Final fallback - return a generic label
+      console.warn('Could not parse date:', item.month);
+      return 'Fecha inválida';
+      
+    } catch (error) {
+      console.error('Error parsing date:', item.month, error);
+      return 'Fecha inválida';
+    }
   });
 
   const chartData = {

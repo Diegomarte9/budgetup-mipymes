@@ -58,10 +58,18 @@ export async function GET(request: NextRequest) {
       endDate = new Date(validatedParams.endDate).toISOString().split('T')[0];
     } else {
       // Use months parameter (default behavior)
-      const monthsAgo = new Date();
-      monthsAgo.setMonth(monthsAgo.getMonth() - (validatedParams.months - 1));
-      startDate = new Date(monthsAgo.getFullYear(), monthsAgo.getMonth(), 1).toISOString().split('T')[0];
-      endDate = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      
+      // Calculate start date: go back (months - 1) months from current month
+      // Use setMonth to handle year transitions correctly
+      const startDateObj = new Date(now.getFullYear(), now.getMonth(), 1);
+      startDateObj.setMonth(startDateObj.getMonth() - (validatedParams.months - 1));
+      
+      // End date is the last day of current month
+      const endDateObj = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      startDate = startDateObj.toISOString().split('T')[0];
+      endDate = endDateObj.toISOString().split('T')[0];
     }
 
     // Get monthly balance data from the view with date range filter
@@ -76,6 +84,12 @@ export async function GET(request: NextRequest) {
     if (monthlyError) {
       console.error('Error fetching monthly data:', monthlyError);
       return NextResponse.json({ error: 'Failed to fetch monthly data' }, { status: 500 });
+    }
+
+    // Debug: Log the data to see what we're getting (development only)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DEBUG Monthly API - Date range:', { startDate, endDate });
+      console.log('DEBUG Monthly API - Raw data:', monthlyData?.slice(0, 3));
     }
 
     const response = NextResponse.json({
