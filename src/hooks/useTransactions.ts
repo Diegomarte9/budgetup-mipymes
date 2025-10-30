@@ -28,6 +28,7 @@ export interface TransactionFilters {
   categoryId?: string;
   startDate?: string;
   endDate?: string;
+  search?: string;
   limit?: number;
   offset?: number;
 }
@@ -44,6 +45,7 @@ export const fetchTransactions = async (filters: TransactionFilters): Promise<Tr
     if (filters.categoryId) params.append('category_id', filters.categoryId);
     if (filters.startDate) params.append('start_date', filters.startDate);
     if (filters.endDate) params.append('end_date', filters.endDate);
+    if (filters.search && filters.search.trim()) params.append('search', filters.search.trim());
     if (filters.limit) params.append('limit', filters.limit.toString());
     if (filters.offset) params.append('offset', filters.offset.toString());
 

@@ -22,6 +22,7 @@ import {
   type TransactionType 
 } from '@/lib/validations/transactions';
 import { formatDateForInput, getTodayForInput, dateInputToISO } from '@/lib/utils/date';
+import { capitalizeWords } from '@/lib/utils/text';
 import type { Tables } from '@/types/supabase';
 
 type Transaction = Tables<'transactions'>;
@@ -271,6 +272,11 @@ export function TransactionForm({
     setValue('amount', value);
   };
 
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const capitalizedValue = capitalizeWords(e.target.value);
+    setValue('description', capitalizedValue);
+  };
+
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -392,12 +398,13 @@ export function TransactionForm({
           <Input
             id="description"
             placeholder={
-              watchedType === 'income' ? 'Ej: Venta de productos' :
-              watchedType === 'expense' ? 'Ej: Pago de renta' :
-              'Ej: Transferencia a cuenta de ahorros'
+              watchedType === 'income' ? 'Ej: Venta De Productos' :
+              watchedType === 'expense' ? 'Ej: Pago De Renta' :
+              'Ej: Transferencia A Cuenta De Ahorros'
             }
             className={errors.description ? 'border-red-500' : ''}
             {...register('description')}
+            onChange={handleDescriptionChange}
           />
           {errors.description && (
             <p className="text-sm text-red-500">{errors.description.message}</p>
