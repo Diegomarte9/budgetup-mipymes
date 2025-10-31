@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { LoadingProvider } from './loading-provider';
+import { SessionProvider } from './session-provider';
 import { MembershipProvider } from '@/contexts/MembershipContext';
 import { useState } from 'react';
 import { createQueryClient } from '@/lib/react-query';
@@ -18,25 +19,27 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute='class'
-        defaultTheme='system'
-        enableSystem
-        disableTransitionOnChange
-      >
-        <MembershipProvider>
-          <LoadingProvider>
-            {children}
-            <Toaster 
-              position='top-right' 
-              expand={false} 
-              richColors 
-              closeButton 
-              className="dark-mode-transition"
-            />
-          </LoadingProvider>
-        </MembershipProvider>
-      </ThemeProvider>
+      <SessionProvider>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='system'
+          enableSystem
+          disableTransitionOnChange
+        >
+          <MembershipProvider>
+            <LoadingProvider>
+              {children}
+              <Toaster 
+                position='top-right' 
+                expand={false} 
+                richColors 
+                closeButton 
+                className="dark-mode-transition"
+              />
+            </LoadingProvider>
+          </MembershipProvider>
+        </ThemeProvider>
+      </SessionProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

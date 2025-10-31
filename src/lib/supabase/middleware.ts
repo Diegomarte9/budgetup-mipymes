@@ -29,6 +29,15 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Skip session validation for static assets and API routes to improve performance
+  if (
+    request.nextUrl.pathname.startsWith('/_next/') ||
+    request.nextUrl.pathname.startsWith('/api/') ||
+    request.nextUrl.pathname.includes('.') // Skip files with extensions
+  ) {
+    return supabaseResponse;
+  }
+
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
@@ -64,14 +73,21 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect unauthenticated users to login (except for public routes)
   if (!user && !isPublicRoute) {
-    console.log('Middleware: Redirecting to login from:', request.nextUrl.pathname);
-    const url = request.nextUrl.clone();
-    url.pathname = '/auth/login';
-    return NextResponse.redirect(url);
+    // Only redirect if not already on login page to prevent loops
+    if (request.nextUrl.pathname !== '/auth/login') {
+      console.log('Middleware: Redirecting to login from:', request.nextUrl.pathname);
+      const url = request.nextUrl.clone();
+      url.pathname = '/auth/login';
+      return NextResponse.redirect(url);
+    }
   }
 
   // For authenticated users, check onboarding status before accessing protected routes
-  if (user && !isPublicRoute && !request.nextUrl.pathname.startsWith('/auth/onboarding')) {
+  // Only check onboarding on initial navigation, not on every request
+  if (user && !isPublicRoute && 
+      !request.nextUrl.pathname.startsWith('/auth/onboarding') &&
+      !request.headers.get('x-middleware-rewrite') && // Skip if this is a rewrite
+      request.nextUrl.pathname === '/dashboard') { // Only check on dashboard access
     try {
       // Check if user has completed onboarding (has memberships)
       const { data: memberships, error } = await supabase
@@ -102,9 +118,12 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/auth/register') ||
     request.nextUrl.pathname.startsWith('/auth/forgot-password')
   )) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+    // Only redirect if not already on dashboard to prevent loops
+    if (!request.nextUrl.pathname.startsWith('/dashboard')) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
