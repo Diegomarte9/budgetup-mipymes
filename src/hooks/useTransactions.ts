@@ -192,6 +192,9 @@ export function useCreateTransaction() {
       // Invalidate and refetch transactions
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       
+      // Invalidate transaction totals
+      queryClient.invalidateQueries({ queryKey: ['transaction-totals'] });
+      
       // Invalidate accounts (for balance updates)
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       
@@ -219,6 +222,9 @@ export function useUpdateTransaction() {
       // Invalidate transactions list
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
       
+      // Invalidate transaction totals
+      queryClient.invalidateQueries({ queryKey: ['transaction-totals'] });
+      
       // Invalidate accounts (for balance updates)
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       
@@ -242,6 +248,9 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       // Invalidate and refetch transactions
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+      
+      // Invalidate transaction totals
+      queryClient.invalidateQueries({ queryKey: ['transaction-totals'] });
       
       // Invalidate accounts (for balance updates)
       queryClient.invalidateQueries({ queryKey: ['accounts'] });

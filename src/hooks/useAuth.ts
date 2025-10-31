@@ -44,10 +44,14 @@ export function useAuth() {
         // Method 1: Check if email is already confirmed (strong indicator of existing user)
         if (authData.user.email_confirmed_at) {
           toast.error('Ya existe una cuenta con este email', {
-            description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+            description:
+              'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
             duration: 6000,
           });
-          return { data: null, error: new Error('User already exists') as AuthError };
+          return {
+            data: null,
+            error: new Error('User already exists') as AuthError,
+          };
         }
 
         // Method 2: Check creation time - if user was created more than 10 seconds ago, likely existing
@@ -55,13 +59,17 @@ export function useAuth() {
         const now = new Date();
         const timeDiff = now.getTime() - userCreatedAt.getTime();
         const tenSeconds = 10 * 1000;
-        
+
         if (timeDiff > tenSeconds) {
           toast.error('Ya existe una cuenta con este email', {
-            description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+            description:
+              'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
             duration: 6000,
           });
-          return { data: null, error: new Error('User already exists') as AuthError };
+          return {
+            data: null,
+            error: new Error('User already exists') as AuthError,
+          };
         }
 
         // Method 3: Check if user has identities (existing users usually have identities)
@@ -69,14 +77,19 @@ export function useAuth() {
           const identity = authData.user.identities[0];
           if (identity.created_at) {
             const identityCreatedAt = new Date(identity.created_at);
-            const identityTimeDiff = now.getTime() - identityCreatedAt.getTime();
-            
+            const identityTimeDiff =
+              now.getTime() - identityCreatedAt.getTime();
+
             if (identityTimeDiff > tenSeconds) {
               toast.error('Ya existe una cuenta con este email', {
-                description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+                description:
+                  'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
                 duration: 6000,
               });
-              return { data: null, error: new Error('User already exists') as AuthError };
+              return {
+                data: null,
+                error: new Error('User already exists') as AuthError,
+              };
             }
           }
         }
@@ -95,22 +108,24 @@ export function useAuth() {
       return { data: authData, error: null };
     } catch (error) {
       const authError = error as AuthError;
-      
+
       // Handle specific error cases
-      if (authError.message?.includes('User already registered') || 
-          authError.message?.includes('already registered') ||
-          authError.message?.includes('email address is already registered') ||
-          authError.message?.includes('Ya existe una cuenta con este email') ||
-          authError.message?.includes('User already exists')) {
-        
+      if (
+        authError.message?.includes('User already registered') ||
+        authError.message?.includes('already registered') ||
+        authError.message?.includes('email address is already registered') ||
+        authError.message?.includes('Ya existe una cuenta con este email') ||
+        authError.message?.includes('User already exists')
+      ) {
         // Show a more helpful error message for existing users
         toast.error('Ya existe una cuenta con este email', {
-          description: 'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
+          description:
+            'Puedes iniciar sesión o usar la opción "¿Olvidaste tu contraseña?" si no recuerdas tu contraseña.',
           duration: 6000,
         });
         return { data: null, error: authError };
       }
-      
+
       // Generic error handling
       const errorMessage = authError.message || 'Error al crear la cuenta';
       toast.error(errorMessage);
@@ -176,12 +191,16 @@ export function useAuth() {
       // Save email to localStorage for the reset process
       localStorage.setItem('reset_email', data.email);
 
-      toast.success('Se ha enviado un enlace de restablecimiento a tu correo electrónico. Cópialo y pégalo aquí para obtener el código.');
+      toast.success(
+        'Se ha enviado un enlace de restablecimiento a tu correo electrónico. Cópialo y pégalo aquí para obtener el código.'
+      );
       router.push('/auth/reset-password');
       return { error: null };
     } catch (error) {
       const authError = error as AuthError;
-      toast.error(authError.message || 'Error al enviar el enlace de restablecimiento');
+      toast.error(
+        authError.message || 'Error al enviar el enlace de restablecimiento'
+      );
       return { error: authError };
     } finally {
       setActionLoading(false);
@@ -195,9 +214,11 @@ export function useAuth() {
       // Extract the code from the reset link
       const url = new URL(resetLink);
       const code = url.searchParams.get('code');
-      
+
       if (!code) {
-        throw new Error('Enlace inválido. No se encontró el código de verificación.');
+        throw new Error(
+          'Enlace inválido. No se encontró el código de verificación.'
+        );
       }
 
       // Exchange the code for a session
@@ -216,7 +237,10 @@ export function useAuth() {
     }
   };
 
-  const resetPassword = async (data: { password: string; confirmPassword: string }) => {
+  const resetPassword = async (data: {
+    password: string;
+    confirmPassword: string;
+  }) => {
     try {
       setActionLoading(true);
 
