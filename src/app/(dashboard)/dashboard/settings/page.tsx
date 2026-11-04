@@ -7,10 +7,51 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageLoadingSkeleton } from '@/components/ui/skeleton-loaders';
-import { Settings, User, LogOut, Loader2 } from 'lucide-react';
+import { Settings, User, LogOut, Loader2, FileSpreadsheet } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { user, loading: authLoading, signOut } = useAuth();
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExcelExport = async () => {
+    try {
+      setIsExporting(true);
+      let orgId: string | null = null;
+      try {
+        orgId = localStorage.getItem('currentOrganizationId');
+      } catch {
+        // ignore storage errors; API falls back to the user's first organization
+      }
+      const params = orgId ? `?organization_id=${encodeURIComponent(orgId)}` : '';
+      const response = await fetch(`/api/export/excel${params}`);
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || 'Error al generar el archivo Excel');
+      }
+
+      const filename =
+        response.headers.get('X-Filename') ||
+        `budgetup_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Excel descargado correctamente');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al exportar a Excel');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
@@ -95,6 +136,26 @@ export default function SettingsPage() {
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Cerrar Sesión
+              </MobileButton>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h4 className="font-medium mb-2 text-responsive-sm">Exportar Datos</h4>
+              <p className="text-responsive-xs text-muted-foreground mb-3">
+                Descarga un Excel con tus datos de usuario y de tu empresa: cuentas, categorías y transacciones.
+              </p>
+              <MobileButton
+                variant="outline"
+                onClick={handleExcelExport}
+                disabled={isExporting}
+                className="w-full"
+              >
+                {isExporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                )}
+                {isExporting ? 'Generando Excel...' : 'Descargar Excel'}
               </MobileButton>
             </div>
 
